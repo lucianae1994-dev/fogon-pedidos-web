@@ -1,0 +1,15 @@
+# Credenciales reales: nunca se suben al repositorio. En el servidor este
+# archivo ya existe (o se crea una vez a partir de config.example.php) y no
+# se toca en los despliegues siguientes.
+config.php
+
+# Carpeta donde se suben las fotos de los productos (por FTP, desde el
+# programa). No es parte del codigo, y un despliegue no debe borrarla.
+fotos/
+
+# Script de una sola vez para crear las tablas (si quedo en el servidor,
+# borralo ahi tambien: ya cumplio su funcion).
+_setup_once.php
+
+.DS_Store
+Thumbs.db
