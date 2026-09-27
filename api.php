@@ -26,6 +26,16 @@ function stock_nivel(?int $actual, ?int $minimo): string {
     return 'alto';
 }
 
+/** true si el producto esta sin stock ahora mismo (mismo criterio que se usa
+ * para el punto rojo "Consultar stock" del catalogo). Se usa al crear un
+ * pedido para marcar el renglon como "a confirmar" en vez de bloquear el
+ * pedido. */
+function producto_sin_stock(array $producto): bool {
+    if (($producto['stock_status'] ?? '') === 'outofstock') return true;
+    $actual = $producto['stock_actual'] ?? null;
+    return $actual !== null && (int)$actual <= 0;
+}
+
 function cliente_por_codigo(mysqli $mysqli, string $codigo): ?array {
     $codigo = trim($codigo);
     if ($codigo === '') return null;
@@ -146,6 +156,7 @@ switch ($accion) {
                 'cantidad' => $cantidad,
                 'precio_unitario' => $precios['precio'],
                 'subtotal' => $subtotal,
+                'sin_stock_confirmar' => producto_sin_stock($prod) ? 1 : 0,
             ];
         }
         if (count($lineas) === 0) json_error('Ninguno de los productos del pedido esta disponible.');
@@ -163,14 +174,14 @@ switch ($accion) {
             $pedidoId = $mysqli->insert_id;
 
             $stmtI = $mysqli->prepare(
-                "INSERT INTO pedido_items (pedido_id, producto_id, sku, nombre, cantidad, precio_unitario, subtotal)
-                 VALUES (?,?,?,?,?,?,?)"
+                "INSERT INTO pedido_items (pedido_id, producto_id, sku, nombre, cantidad, precio_unitario, subtotal, sin_stock_confirmar)
+                 VALUES (?,?,?,?,?,?,?,?)"
             );
             foreach ($lineas as $l) {
                 $stmtI->bind_param(
-                    'iissidd',
+                    'iissiddi',
                     $pedidoId, $l['producto_id'], $l['sku'], $l['nombre'],
-                    $l['cantidad'], $l['precio_unitario'], $l['subtotal']
+                    $l['cantidad'], $l['precio_unitario'], $l['subtotal'], $l['sin_stock_confirmar']
                 );
                 $stmtI->execute();
             }
@@ -227,7 +238,7 @@ switch ($accion) {
             $ids = array_map(fn($p) => (int)$p['id'], $pedidos);
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
             $stmtI = $mysqli->prepare(
-                "SELECT pedido_id, sku, nombre, cantidad, precio_unitario, subtotal
+                "SELECT pedido_id, sku, nombre, cantidad, precio_unitario, subtotal, sin_stock_confirmar
                  FROM pedido_items WHERE pedido_id IN ($placeholders) ORDER BY id"
             );
             $stmtI->bind_param(str_repeat('i', count($ids)), ...$ids);

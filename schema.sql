@@ -89,6 +89,9 @@ CREATE TABLE IF NOT EXISTS pedido_items (
     cantidad INT NOT NULL DEFAULT 1,
     precio_unitario DECIMAL(12,2) NOT NULL DEFAULT 0,
     subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,
+    -- 1 si se pidio estando sin stock confirmado (el cliente lo pidio igual,
+    -- a verificar disponibilidad antes de prepararlo).
+    sin_stock_confirmar TINYINT(1) NOT NULL DEFAULT 0,
 
     KEY idx_items_pedido (pedido_id),
     CONSTRAINT fk_items_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,

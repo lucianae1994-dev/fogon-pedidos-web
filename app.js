@@ -137,49 +137,49 @@ function renderProductos() {
   }
 
   filtrados.forEach((p) => {
-    const sinStock = p.stock_status === 'outofstock';
+    const badge = stockBadge(p);
+    const sinStock = badge === STOCK_BADGES.agotado;
     const card = document.createElement('div');
     card.className = 'producto-fila' + (sinStock ? ' sin-stock' : '');
 
-    const badge = stockBadge(p);
     const precioHtml = !verPrecio() ? '' : (p.precio_descuento
       ? `<span class="precio-tachado">${money(p.precio_regular)}</span><span class="precio-actual">${money(p.precio_descuento)}</span>`
       : `<span class="precio-actual">${money(p.precio)}</span>`);
 
     const enCarrito = carrito[p.sku]?.cantidad || 0;
+    const imgHtml = p.imagen_url
+      ? `<img class="producto-img" src="${escapeHtml(p.imagen_url)}" alt="" loading="lazy">`
+      : `<div class="producto-img producto-img-vacia"></div>`;
 
     card.innerHTML = `
+      ${imgHtml}
       <div class="producto-info">
         <div class="producto-nombre"><span class="stock-dot ${badge.dot}" title="${badge.texto}"></span>${escapeHtml(p.nombre)}</div>
         <div class="producto-sub">${escapeHtml([p.laboratorio, p.subrubro].filter(Boolean).join(' · '))}</div>
+        ${sinStock ? '<div class="sin-stock-aviso">Se pide sujeto a confirmacion de stock</div>' : ''}
       </div>
       ${verPrecio() ? `<div class="producto-precio-row">${precioHtml}</div>` : ''}
       <div class="producto-footer">
         <span class="stock-badge ${badge.clase}">${badge.texto}</span>
-        ${sinStock
-          ? ''
-          : `<div class="qty-control">
-               <button data-accion="menos">-</button>
-               <input type="text" value="${enCarrito || 1}" data-qty readonly>
-               <button data-accion="mas">+</button>
-             </div>
-             <button class="btn-agregar" data-accion="agregar">Agregar</button>`
-        }
+        <div class="qty-control">
+          <button data-accion="menos">-</button>
+          <input type="text" value="${enCarrito || 1}" data-qty readonly>
+          <button data-accion="mas">+</button>
+        </div>
+        <button class="btn-agregar" data-accion="agregar">Agregar</button>
       </div>
     `;
 
-    if (!sinStock) {
-      const qtyInput = card.querySelector('[data-qty]');
-      card.querySelector('[data-accion="menos"]').addEventListener('click', () => {
-        qtyInput.value = Math.max(1, parseInt(qtyInput.value, 10) - 1);
-      });
-      card.querySelector('[data-accion="mas"]').addEventListener('click', () => {
-        qtyInput.value = parseInt(qtyInput.value, 10) + 1;
-      });
-      card.querySelector('[data-accion="agregar"]').addEventListener('click', () => {
-        agregarAlCarrito(p, parseInt(qtyInput.value, 10));
-      });
-    }
+    const qtyInput = card.querySelector('[data-qty]');
+    card.querySelector('[data-accion="menos"]').addEventListener('click', () => {
+      qtyInput.value = Math.max(1, parseInt(qtyInput.value, 10) - 1);
+    });
+    card.querySelector('[data-accion="mas"]').addEventListener('click', () => {
+      qtyInput.value = parseInt(qtyInput.value, 10) + 1;
+    });
+    card.querySelector('[data-accion="agregar"]').addEventListener('click', () => {
+      agregarAlCarrito(p, parseInt(qtyInput.value, 10), sinStock);
+    });
 
     cont.appendChild(card);
   });
@@ -192,9 +192,9 @@ function escapeHtml(s) {
 }
 
 // ---------------------------------------------------------------- carrito
-function agregarAlCarrito(producto, cantidad) {
+function agregarAlCarrito(producto, cantidad, sinStock) {
   const actual = carrito[producto.sku]?.cantidad || 0;
-  carrito[producto.sku] = { producto, cantidad: actual + cantidad };
+  carrito[producto.sku] = { producto, cantidad: actual + cantidad, sinStock: !!sinStock };
   actualizarCarritoUI();
 }
 
@@ -206,7 +206,7 @@ function actualizarCarritoUI() {
   cont.innerHTML = '';
   let total = 0;
 
-  items.forEach(({ producto, cantidad }) => {
+  items.forEach(({ producto, cantidad, sinStock }) => {
     const precio = producto.precio_descuento || producto.precio || 0;
     total += precio * cantidad;
     const detalle = verPrecio() ? `${cantidad} x ${money(precio)}` : `Cantidad: ${cantidad}`;
@@ -216,6 +216,7 @@ function actualizarCarritoUI() {
       <div>
         <div class="nombre">${escapeHtml(producto.nombre)}</div>
         <div class="detalle">${detalle}</div>
+        ${sinStock ? '<div class="sin-stock-aviso">Sujeto a confirmacion de stock</div>' : ''}
       </div>
       <button class="quitar">Quitar</button>
     `;
@@ -273,7 +274,8 @@ function mostrarConfirmacion(pedido) {
     const row = document.createElement('div');
     row.className = 'conf-item-row';
     const monto = verPrecio() ? `<span>${money(it.subtotal)}</span>` : '';
-    row.innerHTML = `<span>${it.cantidad} x ${escapeHtml(it.nombre)}</span>${monto}`;
+    const aviso = it.sin_stock_confirmar ? '<div class="sin-stock-aviso">Sujeto a confirmacion de stock</div>' : '';
+    row.innerHTML = `<span>${it.cantidad} x ${escapeHtml(it.nombre)}${aviso}</span>${monto}`;
     cont.appendChild(row);
   });
   const totalRow = document.querySelector('.conf-total');
@@ -328,9 +330,10 @@ function renderMisPedidos(pedidos) {
     const card = document.createElement('div');
     card.className = 'pedido-card';
 
-    const itemsHtml = (p.items || []).map((it) =>
-      `<div class="pedido-item-row"><span>${it.cantidad} x ${escapeHtml(it.nombre)}</span>${verPrecio() ? `<span>${money(it.subtotal)}</span>` : ''}</div>`
-    ).join('');
+    const itemsHtml = (p.items || []).map((it) => {
+      const aviso = it.sin_stock_confirmar ? '<div class="sin-stock-aviso">Sujeto a confirmacion de stock</div>' : '';
+      return `<div class="pedido-item-row"><span>${it.cantidad} x ${escapeHtml(it.nombre)}${aviso}</span>${verPrecio() ? `<span>${money(it.subtotal)}</span>` : ''}</div>`;
+    }).join('');
 
     const notasHtml = p.notas
       ? `<div class="pedido-notas"><strong>Notas:</strong> ${escapeHtml(p.notas)}</div>`
@@ -408,6 +411,14 @@ function exportarPedidoPDF(pedido) {
     doc.text(String(it.nombre || ''), margenIzq + 16, y, { maxWidth: 130 });
     if (verPrecio()) doc.text(money(it.subtotal), margenDer, y, { align: 'right' });
     y += 7;
+    if (it.sin_stock_confirmar) {
+      doc.setFontSize(8);
+      doc.setTextColor(180, 60, 40);
+      doc.text('Sujeto a confirmacion de stock', margenIzq + 16, y);
+      doc.setTextColor(0);
+      doc.setFontSize(10);
+      y += 6;
+    }
   });
 
   y += 2;
