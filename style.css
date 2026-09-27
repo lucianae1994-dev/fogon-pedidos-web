@@ -148,6 +148,15 @@ body {
 .stock-rojo { color: var(--danger); background: #fbe7e4; }
 .stock-rojo::before { background: var(--danger); }
 
+/* Circulito de semaforo adelante del nombre del producto. */
+.stock-dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  margin-right: 7px; flex-shrink: 0; vertical-align: middle;
+}
+.dot-verde { background: #2fa84f; }
+.dot-amarillo { background: #e8a838; }
+.dot-rojo { background: var(--danger); }
+
 @media (max-width: 560px) {
   .producto-fila { flex-wrap: wrap; }
   .producto-info { flex-basis: 100%; }

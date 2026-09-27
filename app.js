@@ -12,9 +12,9 @@ function verPrecio() {
 }
 
 const STOCK_BADGES = {
-  agotado: { clase: 'stock-rojo', texto: 'Consultar stock' },
-  bajo: { clase: 'stock-amarillo', texto: 'Stock limitado' },
-  alto: { clase: 'stock-verde', texto: 'En stock' },
+  agotado: { clase: 'stock-rojo', dot: 'dot-rojo', texto: 'Consultar stock' },
+  bajo: { clase: 'stock-amarillo', dot: 'dot-amarillo', texto: 'Stock limitado' },
+  alto: { clase: 'stock-verde', dot: 'dot-verde', texto: 'En stock' },
 };
 
 function stockBadge(p) {
@@ -150,7 +150,7 @@ function renderProductos() {
 
     card.innerHTML = `
       <div class="producto-info">
-        <div class="producto-nombre">${escapeHtml(p.nombre)}</div>
+        <div class="producto-nombre"><span class="stock-dot ${badge.dot}" title="${badge.texto}"></span>${escapeHtml(p.nombre)}</div>
         <div class="producto-sub">${escapeHtml([p.laboratorio, p.subrubro].filter(Boolean).join(' · '))}</div>
       </div>
       ${verPrecio() ? `<div class="producto-precio-row">${precioHtml}</div>` : ''}
