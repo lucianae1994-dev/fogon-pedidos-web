@@ -236,6 +236,8 @@ body {
 .conf-items { text-align: left; margin: 18px 0; border-top: 1px solid var(--border); padding-top: 12px; }
 .conf-item-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
 .conf-total { font-size: 16px; margin-bottom: 18px; }
+.conf-botones { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.conf-botones .btn-primario { width: 100%; }
 
 /* ---------------- mis pedidos ---------------- */
 #vistaMisPedidos { padding: 24px; }

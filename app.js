@@ -327,7 +327,10 @@ $('#btnConfirmarPedido').addEventListener('click', async () => {
   }
 });
 
+let pedidoConfirmadoActual = null;
+
 function mostrarConfirmacion(pedido) {
+  pedidoConfirmadoActual = pedido;
   $('#confPedidoId').textContent = `Pedido #${pedido.id}`;
   const fecha = new Date(pedido.creado_en.replace(' ', 'T'));
   $('#confFecha').textContent = fecha.toLocaleString('es-AR', {
@@ -351,6 +354,9 @@ function mostrarConfirmacion(pedido) {
 }
 
 $('#btnNuevoPedido').addEventListener('click', () => mostrarVista('#vistaCatalogo'));
+$('#btnDescargarPdfConf').addEventListener('click', () => {
+  if (pedidoConfirmadoActual) exportarPedidoPDF(pedidoConfirmadoActual);
+});
 
 // ---------------------------------------------------------------- mis pedidos (seguimiento)
 const ESTADO_LABELS = {

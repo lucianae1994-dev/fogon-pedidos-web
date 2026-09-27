@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>El Fogon - Pedidos</title>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -77,7 +77,10 @@
       <p id="confFecha" class="muted"></p>
       <div id="confItems" class="conf-items"></div>
       <div class="conf-total">Total: <strong id="confTotal"></strong></div>
-      <button id="btnNuevoPedido" class="btn-primario">Hacer otro pedido</button>
+      <div class="conf-botones">
+        <button id="btnDescargarPdfConf" class="btn-link" type="button">Descargar PDF</button>
+        <button id="btnNuevoPedido" class="btn-primario">Hacer otro pedido</button>
+      </div>
     </div>
   </main>
 
@@ -120,6 +123,6 @@
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>
