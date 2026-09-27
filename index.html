@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>El Fogon - Pedidos</title>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -81,6 +81,33 @@
     </div>
   </main>
 
+  <!-- ================= DETALLE DE PRODUCTO ================= -->
+  <div id="modalProducto" class="modal-overlay hidden">
+    <div class="modal-box">
+      <button id="btnCerrarModalProducto" class="btn-link modal-cerrar">Cerrar &times;</button>
+      <div class="modal-producto-img-wrap">
+        <img id="modalProductoImg" class="modal-producto-img hidden" src="" alt="">
+        <div id="modalProductoImgVacia" class="modal-producto-img producto-img-vacia hidden"></div>
+      </div>
+      <div class="modal-producto-body">
+        <div class="modal-producto-nombre"><span id="modalProductoDot" class="stock-dot"></span><span id="modalProductoNombre"></span></div>
+        <div id="modalProductoSub" class="producto-sub"></div>
+        <p id="modalProductoDescripcion" class="modal-producto-desc"></p>
+        <div id="modalProductoAviso" class="sin-stock-aviso hidden">Se pide sujeto a confirmacion de stock</div>
+        <div id="modalProductoPrecioRow" class="producto-precio-row modal-precio-row"></div>
+        <div class="producto-footer modal-footer">
+          <span id="modalProductoBadge" class="stock-badge"></span>
+          <div class="qty-control">
+            <button id="modalQtyMenos" type="button">-</button>
+            <input type="text" id="modalQtyInput" value="1" readonly>
+            <button id="modalQtyMas" type="button">+</button>
+          </div>
+          <button id="modalBtnAgregar" class="btn-agregar" type="button">Agregar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= MIS PEDIDOS ================= -->
   <main id="vistaMisPedidos" class="vista hidden">
     <div class="mis-pedidos-layout">
@@ -93,6 +120,6 @@
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

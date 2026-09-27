@@ -171,15 +171,19 @@ function renderProductos() {
     `;
 
     const qtyInput = card.querySelector('[data-qty]');
-    card.querySelector('[data-accion="menos"]').addEventListener('click', () => {
+    card.querySelector('[data-accion="menos"]').addEventListener('click', (e) => {
+      e.stopPropagation();
       qtyInput.value = Math.max(1, parseInt(qtyInput.value, 10) - 1);
     });
-    card.querySelector('[data-accion="mas"]').addEventListener('click', () => {
+    card.querySelector('[data-accion="mas"]').addEventListener('click', (e) => {
+      e.stopPropagation();
       qtyInput.value = parseInt(qtyInput.value, 10) + 1;
     });
-    card.querySelector('[data-accion="agregar"]').addEventListener('click', () => {
+    card.querySelector('[data-accion="agregar"]').addEventListener('click', (e) => {
+      e.stopPropagation();
       agregarAlCarrito(p, parseInt(qtyInput.value, 10), sinStock);
     });
+    card.addEventListener('click', () => abrirDetalleProducto(p, sinStock, badge));
 
     cont.appendChild(card);
   });
@@ -190,6 +194,68 @@ function escapeHtml(s) {
   d.textContent = s || '';
   return d.innerHTML;
 }
+
+// ---------------------------------------------------------------- detalle de producto (modal)
+function abrirDetalleProducto(p, sinStock, badge) {
+  const img = $('#modalProductoImg');
+  const imgVacia = $('#modalProductoImgVacia');
+  if (p.imagen_url) {
+    img.src = p.imagen_url;
+    img.classList.remove('hidden');
+    imgVacia.classList.add('hidden');
+  } else {
+    img.classList.add('hidden');
+    imgVacia.classList.remove('hidden');
+  }
+
+  $('#modalProductoDot').className = `stock-dot ${badge.dot}`;
+  $('#modalProductoDot').title = badge.texto;
+  $('#modalProductoNombre').textContent = p.nombre || '';
+  $('#modalProductoSub').textContent = [p.laboratorio, p.rubro, p.subrubro].filter(Boolean).join(' · ');
+  $('#modalProductoDescripcion').textContent = p.descripcion || 'Sin descripcion disponible.';
+  $('#modalProductoAviso').classList.toggle('hidden', !sinStock);
+  $('#modalProductoBadge').className = `stock-badge ${badge.clase}`;
+  $('#modalProductoBadge').textContent = badge.texto;
+
+  const precioRow = $('#modalProductoPrecioRow');
+  if (verPrecio()) {
+    precioRow.classList.remove('hidden');
+    precioRow.innerHTML = p.precio_descuento
+      ? `<span class="precio-tachado">${money(p.precio_regular)}</span><span class="precio-actual">${money(p.precio_descuento)}</span>`
+      : `<span class="precio-actual">${money(p.precio)}</span>`;
+  } else {
+    precioRow.classList.add('hidden');
+    precioRow.innerHTML = '';
+  }
+
+  const qtyInput = $('#modalQtyInput');
+  qtyInput.value = carrito[p.sku]?.cantidad || 1;
+
+  $('#modalQtyMenos').onclick = () => {
+    qtyInput.value = Math.max(1, parseInt(qtyInput.value, 10) - 1);
+  };
+  $('#modalQtyMas').onclick = () => {
+    qtyInput.value = parseInt(qtyInput.value, 10) + 1;
+  };
+  $('#modalBtnAgregar').onclick = () => {
+    agregarAlCarrito(p, parseInt(qtyInput.value, 10), sinStock);
+    cerrarModalProducto();
+  };
+
+  $('#modalProducto').classList.remove('hidden');
+}
+
+function cerrarModalProducto() {
+  $('#modalProducto').classList.add('hidden');
+}
+
+$('#btnCerrarModalProducto').addEventListener('click', cerrarModalProducto);
+$('#modalProducto').addEventListener('click', (e) => {
+  if (e.target.id === 'modalProducto') cerrarModalProducto();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') cerrarModalProducto();
+});
 
 // ---------------------------------------------------------------- carrito
 function agregarAlCarrito(producto, cantidad, sinStock) {
