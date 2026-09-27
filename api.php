@@ -34,6 +34,7 @@ switch ($accion) {
                 'id' => (int)$cliente['id'],
                 'nombre' => $cliente['nombre'],
                 'nivel_precio' => $cliente['nivel_precio'],
+                'ver_precio' => ver_precio($cliente['nivel_precio']),
             ],
         ]);
         break;
@@ -52,13 +53,18 @@ switch ($accion) {
                     precio_mostrador, precio_mostrador_descuento,
                     precio_comercio, precio_comercio_descuento,
                     precio_ganaderos, precio_ganaderos_descuento,
-                    stock_status
+                    stock_status, stock_actual, stock_minimo, stock_maximo
              FROM productos WHERE activo=1 ORDER BY rubro, nombre"
         );
 
+        $verPrecio = ver_precio($cliente['nivel_precio']);
         $productos = [];
         while ($p = $res->fetch_assoc()) {
             $precios = precio_para_nivel($p, $cliente['nivel_precio']);
+            $actual = $p['stock_actual'] !== null ? (int)$p['stock_actual'] : null;
+            $minimo = $p['stock_minimo'] !== null ? (int)$p['stock_minimo'] : null;
+            $maximo = $p['stock_maximo'] !== null ? (int)$p['stock_maximo'] : null;
+            $nivelStock = $p['stock_status'] === 'outofstock' ? 'agotado' : stock_nivel($actual, $minimo);
             $productos[] = [
                 'id' => (int)$p['id'],
                 'sku' => $p['sku'],
@@ -69,12 +75,16 @@ switch ($accion) {
                 'laboratorio' => $p['laboratorio'],
                 'imagen_url' => $p['imagen_url'],
                 'stock_status' => $p['stock_status'],
-                'precio' => $precios['precio'],
-                'precio_regular' => $precios['precio_regular'],
-                'precio_descuento' => $precios['precio_descuento'],
+                'stock_actual' => $actual,
+                'stock_minimo' => $minimo,
+                'stock_maximo' => $maximo,
+                'stock_nivel' => $nivelStock,
+                'precio' => $verPrecio ? $precios['precio'] : null,
+                'precio_regular' => $verPrecio ? $precios['precio_regular'] : null,
+                'precio_descuento' => $verPrecio ? $precios['precio_descuento'] : null,
             ];
         }
-        json_out(['productos' => $productos, 'nivel_precio' => $cliente['nivel_precio']]);
+        json_out(['productos' => $productos, 'nivel_precio' => $cliente['nivel_precio'], 'ver_precio' => $verPrecio]);
         break;
 
     // ------------------------------------------------------------------
@@ -158,14 +168,23 @@ switch ($accion) {
         $stmtF->execute();
         $creado = $stmtF->get_result()->fetch_assoc()['creado_en'] ?? null;
 
+        $verPrecio = ver_precio($cliente['nivel_precio']);
+        $itemsSalida = array_map(function ($l) use ($verPrecio) {
+            if (!$verPrecio) {
+                unset($l['precio_unitario'], $l['subtotal']);
+            }
+            return $l;
+        }, $lineas);
+
         json_out([
             'ok' => true,
             'pedido' => [
                 'id' => (int)$pedidoId,
                 'creado_en' => $creado,
-                'total' => round($total, 2),
-                'items' => $lineas,
+                'total' => $verPrecio ? round($total, 2) : null,
+                'items' => $itemsSalida,
                 'cliente' => $cliente['nombre'],
+                'ver_precio' => $verPrecio,
             ],
         ]);
         break;
@@ -200,15 +219,25 @@ switch ($accion) {
             foreach ($stmtI->get_result()->fetch_all(MYSQLI_ASSOC) as $it) {
                 $itemsPorPedido[(int)$it['pedido_id']][] = $it;
             }
+            $verPrecio = ver_precio($cliente['nivel_precio']);
             foreach ($pedidos as &$p) {
                 $p['id'] = (int)$p['id'];
-                $p['total'] = (float)$p['total'];
-                $p['items'] = $itemsPorPedido[$p['id']] ?? [];
+                $items = $itemsPorPedido[$p['id']] ?? [];
+                if ($verPrecio) {
+                    $p['total'] = (float)$p['total'];
+                } else {
+                    unset($p['total']);
+                    $items = array_map(function ($it) {
+                        unset($it['precio_unitario'], $it['subtotal']);
+                        return $it;
+                    }, $items);
+                }
+                $p['items'] = $items;
             }
             unset($p);
         }
 
-        json_out(['pedidos' => $pedidos]);
+        json_out(['pedidos' => $pedidos, 'ver_precio' => ver_precio($cliente['nivel_precio'])]);
         break;
 
     default:

@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS productos (
     precio_ganaderos_descuento DECIMAL(12,2) NULL,
 
     stock_status ENUM('instock','outofstock') NOT NULL DEFAULT 'instock',
+    stock_actual INT NULL,
+    stock_minimo INT NULL,
+    stock_maximo INT NULL,
     activo TINYINT(1) NOT NULL DEFAULT 1,
 
     actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -44,7 +47,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     codigo_acceso VARCHAR(32) NOT NULL,
-    nivel_precio ENUM('mostrador','comercio','ganaderos') NOT NULL DEFAULT 'mostrador',
+    nivel_precio ENUM('mostrador','comercio','ganaderos','sin_precio') NOT NULL DEFAULT 'mostrador',
     email VARCHAR(255) NULL,
     telefono VARCHAR(50) NULL,
     notas TEXT NULL,

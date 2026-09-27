@@ -6,6 +6,22 @@ let productos = [];
 let rubroActivo = 'Todos';
 let carrito = {}; // sku -> {producto, cantidad}
 
+// false para el acceso "sin_precio": solo pedidos, sin ver ningun monto.
+function verPrecio() {
+  return !clienteActual || clienteActual.ver_precio !== false;
+}
+
+const STOCK_BADGES = {
+  agotado: { clase: 'stock-rojo', texto: 'Consultar stock' },
+  bajo: { clase: 'stock-amarillo', texto: 'Stock limitado' },
+  alto: { clase: 'stock-verde', texto: 'En stock' },
+};
+
+function stockBadge(p) {
+  const nivel = p.stock_status === 'outofstock' ? 'agotado' : (p.stock_nivel || 'alto');
+  return STOCK_BADGES[nivel] || STOCK_BADGES.alto;
+}
+
 const $ = (sel) => document.querySelector(sel);
 const money = (n) => '$ ' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -125,9 +141,10 @@ function renderProductos() {
     const card = document.createElement('div');
     card.className = 'producto-fila' + (sinStock ? ' sin-stock' : '');
 
-    const precioHtml = p.precio_descuento
+    const badge = stockBadge(p);
+    const precioHtml = !verPrecio() ? '' : (p.precio_descuento
       ? `<span class="precio-tachado">${money(p.precio_regular)}</span><span class="precio-actual">${money(p.precio_descuento)}</span>`
-      : `<span class="precio-actual">${money(p.precio)}</span>`;
+      : `<span class="precio-actual">${money(p.precio)}</span>`);
 
     const enCarrito = carrito[p.sku]?.cantidad || 0;
 
@@ -136,10 +153,11 @@ function renderProductos() {
         <div class="producto-nombre">${escapeHtml(p.nombre)}</div>
         <div class="producto-sub">${escapeHtml([p.laboratorio, p.subrubro].filter(Boolean).join(' · '))}</div>
       </div>
-      <div class="producto-precio-row">${precioHtml}</div>
+      ${verPrecio() ? `<div class="producto-precio-row">${precioHtml}</div>` : ''}
       <div class="producto-footer">
+        <span class="stock-badge ${badge.clase}">${badge.texto}</span>
         ${sinStock
-          ? '<span class="badge-sin-stock">Sin stock</span>'
+          ? ''
           : `<div class="qty-control">
                <button data-accion="menos">-</button>
                <input type="text" value="${enCarrito || 1}" data-qty readonly>
@@ -189,14 +207,15 @@ function actualizarCarritoUI() {
   let total = 0;
 
   items.forEach(({ producto, cantidad }) => {
-    const precio = producto.precio_descuento || producto.precio;
+    const precio = producto.precio_descuento || producto.precio || 0;
     total += precio * cantidad;
+    const detalle = verPrecio() ? `${cantidad} x ${money(precio)}` : `Cantidad: ${cantidad}`;
     const row = document.createElement('div');
     row.className = 'carrito-item';
     row.innerHTML = `
       <div>
         <div class="nombre">${escapeHtml(producto.nombre)}</div>
-        <div class="detalle">${cantidad} x ${money(precio)}</div>
+        <div class="detalle">${detalle}</div>
       </div>
       <button class="quitar">Quitar</button>
     `;
@@ -208,6 +227,8 @@ function actualizarCarritoUI() {
     cont.appendChild(row);
   });
 
+  const totalRow = $('.carrito-total');
+  if (totalRow) totalRow.classList.toggle('hidden', !verPrecio());
   $('#carritoTotal').textContent = money(total);
 }
 
@@ -215,38 +236,18 @@ $('#btnCarrito').addEventListener('click', () => $('#panelCarrito').classList.re
 $('#btnCerrarCarrito').addEventListener('click', () => $('#panelCarrito').classList.add('hidden'));
 
 $('#btnConfirmarPedido').addEventListener('click', async () => {
-  const itemsCarrito = Object.values(carrito);
-  const items = itemsCarrito.map(({ producto, cantidad }) => ({ sku: producto.sku, cantidad }));
+  const items = Object.values(carrito).map(({ producto, cantidad }) => ({ sku: producto.sku, cantidad }));
   $('#carritoError').classList.add('hidden');
   if (items.length === 0) {
     $('#carritoError').textContent = 'Agrega al menos un producto.';
     $('#carritoError').classList.remove('hidden');
     return;
   }
-
-  const notas = $('#notasPedido').value.trim();
-  let total = 0;
-  const resumen = itemsCarrito.map(({ producto, cantidad }) => {
-    const precio = producto.precio_descuento || producto.precio;
-    const subtotal = precio * cantidad;
-    total += subtotal;
-    return `${cantidad} x ${producto.nombre} - ${money(subtotal)}`;
-  }).join('\n');
-
-  const mensajeConfirmacion =
-    `Vas a enviar este pedido:\n\n${resumen}\n\nTotal: ${money(total)}` +
-    (notas ? `\nNotas: ${notas}` : '') +
-    `\n\nConfirmar el envio?`;
-
-  if (!window.confirm(mensajeConfirmacion)) {
-    return;
-  }
-
   try {
     const data = await llamar('pedido_crear', {
       codigo: codigoActual,
       items,
-      notas,
+      notas: $('#notasPedido').value.trim(),
     });
     mostrarConfirmacion(data.pedido);
     carrito = {};
@@ -271,9 +272,12 @@ function mostrarConfirmacion(pedido) {
   pedido.items.forEach((it) => {
     const row = document.createElement('div');
     row.className = 'conf-item-row';
-    row.innerHTML = `<span>${it.cantidad} x ${escapeHtml(it.nombre)}</span><span>${money(it.subtotal)}</span>`;
+    const monto = verPrecio() ? `<span>${money(it.subtotal)}</span>` : '';
+    row.innerHTML = `<span>${it.cantidad} x ${escapeHtml(it.nombre)}</span>${monto}`;
     cont.appendChild(row);
   });
+  const totalRow = document.querySelector('.conf-total');
+  if (totalRow) totalRow.classList.toggle('hidden', !verPrecio());
   $('#confTotal').textContent = money(pedido.total);
   mostrarVista('#vistaConfirmacion');
 }
@@ -325,7 +329,7 @@ function renderMisPedidos(pedidos) {
     card.className = 'pedido-card';
 
     const itemsHtml = (p.items || []).map((it) =>
-      `<div class="pedido-item-row"><span>${it.cantidad} x ${escapeHtml(it.nombre)}</span><span>${money(it.subtotal)}</span></div>`
+      `<div class="pedido-item-row"><span>${it.cantidad} x ${escapeHtml(it.nombre)}</span>${verPrecio() ? `<span>${money(it.subtotal)}</span>` : ''}</div>`
     ).join('');
 
     const notasHtml = p.notas
@@ -344,7 +348,7 @@ function renderMisPedidos(pedidos) {
       ${notasHtml}
       <div class="pedido-card-footer">
         <button type="button" class="btn-link" data-accion="pdf-pedido" data-id="${p.id}">Descargar PDF</button>
-        <div class="pedido-card-total">Total: <strong>${money(p.total)}</strong></div>
+        ${verPrecio() ? `<div class="pedido-card-total">Total: <strong>${money(p.total)}</strong></div>` : ''}
       </div>
     `;
     cont.appendChild(card);
@@ -389,7 +393,7 @@ function exportarPedidoPDF(pedido) {
   doc.setFont(undefined, 'bold');
   doc.text('Cant.', margenIzq, y);
   doc.text('Producto', margenIzq + 16, y);
-  doc.text('Subtotal', margenDer, y, { align: 'right' });
+  if (verPrecio()) doc.text('Subtotal', margenDer, y, { align: 'right' });
   doc.setFont(undefined, 'normal');
   y += 2;
   doc.line(margenIzq, y, margenDer, y);
@@ -402,7 +406,7 @@ function exportarPedidoPDF(pedido) {
     }
     doc.text(String(it.cantidad), margenIzq, y);
     doc.text(String(it.nombre || ''), margenIzq + 16, y, { maxWidth: 130 });
-    doc.text(money(it.subtotal), margenDer, y, { align: 'right' });
+    if (verPrecio()) doc.text(money(it.subtotal), margenDer, y, { align: 'right' });
     y += 7;
   });
 
@@ -418,9 +422,11 @@ function exportarPedidoPDF(pedido) {
     y += 10;
   }
 
-  doc.setFontSize(12);
-  doc.setFont(undefined, 'bold');
-  doc.text(`Total: ${money(pedido.total)}`, margenDer, y, { align: 'right' });
+  if (verPrecio()) {
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text(`Total: ${money(pedido.total)}`, margenDer, y, { align: 'right' });
+  }
 
   doc.save(`pedido-${pedido.id}.pdf`);
 }

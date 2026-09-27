@@ -30,8 +30,8 @@ switch ($accion) {
                      precio_mostrador, precio_mostrador_descuento,
                      precio_comercio, precio_comercio_descuento,
                      precio_ganaderos, precio_ganaderos_descuento,
-                     stock_status, activo)
-                 VALUES (?,?,?,?,?,?,?, ?,?, ?,?, ?,?, ?,1)
+                     stock_status, stock_actual, stock_minimo, stock_maximo, activo)
+                 VALUES (?,?,?,?,?,?,?, ?,?, ?,?, ?,?, ?,?,?,?, 1)
                  ON DUPLICATE KEY UPDATE
                     nombre=VALUES(nombre), descripcion=VALUES(descripcion),
                     rubro=VALUES(rubro), subrubro=VALUES(subrubro), laboratorio=VALUES(laboratorio),
@@ -39,17 +39,22 @@ switch ($accion) {
                     precio_mostrador=VALUES(precio_mostrador), precio_mostrador_descuento=VALUES(precio_mostrador_descuento),
                     precio_comercio=VALUES(precio_comercio), precio_comercio_descuento=VALUES(precio_comercio_descuento),
                     precio_ganaderos=VALUES(precio_ganaderos), precio_ganaderos_descuento=VALUES(precio_ganaderos_descuento),
-                    stock_status=VALUES(stock_status), activo=1"
+                    stock_status=VALUES(stock_status),
+                    stock_actual=VALUES(stock_actual), stock_minimo=VALUES(stock_minimo), stock_maximo=VALUES(stock_maximo),
+                    activo=1"
             );
 
             $sku = $nombre = $descripcion = $rubro = $subrubro = $laboratorio = $imagenUrl = $stock = '';
             $pm = $pmd = $pc = $pcd = $pg = $pgd = 0.0;
-            // 14 placeholders: sku,nombre,descripcion,rubro,subrubro,laboratorio,imagen_url (7x s),
-            // precio_mostrador..precio_ganaderos_descuento (6x d), stock_status (1x s)
+            $stockActual = $stockMinimo = $stockMaximo = null;
+            // 17 placeholders: sku,nombre,descripcion,rubro,subrubro,laboratorio,imagen_url (7x s),
+            // precio_mostrador..precio_ganaderos_descuento (6x d), stock_status (1x s),
+            // stock_actual, stock_minimo, stock_maximo (3x i)
             $stmt->bind_param(
-                'sssssssdddddds',
+                'sssssssdddddds' . 'iii',
                 $sku, $nombre, $descripcion, $rubro, $subrubro, $laboratorio, $imagenUrl,
-                $pm, $pmd, $pc, $pcd, $pg, $pgd, $stock
+                $pm, $pmd, $pc, $pcd, $pg, $pgd, $stock,
+                $stockActual, $stockMinimo, $stockMaximo
             );
 
             $skusVistos = [];
@@ -74,6 +79,9 @@ switch ($accion) {
                 $pgd = (isset($p['precio_ganaderos_descuento']) && $p['precio_ganaderos_descuento'] !== null && $p['precio_ganaderos_descuento'] !== '')
                     ? (float)$p['precio_ganaderos_descuento'] : null;
                 $stock = (string)($p['stock_status'] ?? 'instock');
+                $stockActual = ctype_digit((string)($p['stock_actual'] ?? '')) ? (int)$p['stock_actual'] : null;
+                $stockMinimo = ctype_digit((string)($p['stock_minimo'] ?? '')) ? (int)$p['stock_minimo'] : null;
+                $stockMaximo = ctype_digit((string)($p['stock_maximo'] ?? '')) ? (int)$p['stock_maximo'] : null;
 
                 $stmt->execute();
             }
@@ -136,6 +144,9 @@ switch ($accion) {
         $pgd = (isset($b['precio_ganaderos_descuento']) && $b['precio_ganaderos_descuento'] !== null && $b['precio_ganaderos_descuento'] !== '')
             ? (float)$b['precio_ganaderos_descuento'] : null;
         $stock = (string)($b['stock_status'] ?? 'instock');
+        $stockActual = ctype_digit((string)($b['stock_actual'] ?? '')) ? (int)$b['stock_actual'] : null;
+        $stockMinimo = ctype_digit((string)($b['stock_minimo'] ?? '')) ? (int)$b['stock_minimo'] : null;
+        $stockMaximo = ctype_digit((string)($b['stock_maximo'] ?? '')) ? (int)$b['stock_maximo'] : null;
         $activo = isset($b['activo']) ? (int)!!$b['activo'] : 1;
 
         try {
@@ -148,13 +159,13 @@ switch ($accion) {
                         precio_mostrador=?, precio_mostrador_descuento=?,
                         precio_comercio=?, precio_comercio_descuento=?,
                         precio_ganaderos=?, precio_ganaderos_descuento=?,
-                        stock_status=?, activo=?
+                        stock_status=?, stock_actual=?, stock_minimo=?, stock_maximo=?, activo=?
                      WHERE sku=?"
                 );
                 $stmt->bind_param(
-                    'sssssssddddddsis',
+                    'sssssssddddddsiiiis',
                     $sku, $nombre, $descripcion, $rubro, $subrubro, $laboratorio, $imagenUrl,
-                    $pm, $pmd, $pc, $pcd, $pg, $pgd, $stock, $activo, $skuOriginal
+                    $pm, $pmd, $pc, $pcd, $pg, $pgd, $stock, $stockActual, $stockMinimo, $stockMaximo, $activo, $skuOriginal
                 );
                 if (!$stmt->execute()) {
                     throw new RuntimeException($mysqli->error);
@@ -170,8 +181,8 @@ switch ($accion) {
                          precio_mostrador, precio_mostrador_descuento,
                          precio_comercio, precio_comercio_descuento,
                          precio_ganaderos, precio_ganaderos_descuento,
-                         stock_status, activo)
-                     VALUES (?,?,?,?,?,?,?, ?,?, ?,?, ?,?, ?,?)
+                         stock_status, stock_actual, stock_minimo, stock_maximo, activo)
+                     VALUES (?,?,?,?,?,?,?, ?,?, ?,?, ?,?, ?,?,?,?,?)
                      ON DUPLICATE KEY UPDATE
                         nombre=VALUES(nombre), descripcion=VALUES(descripcion),
                         rubro=VALUES(rubro), subrubro=VALUES(subrubro), laboratorio=VALUES(laboratorio),
@@ -179,12 +190,14 @@ switch ($accion) {
                         precio_mostrador=VALUES(precio_mostrador), precio_mostrador_descuento=VALUES(precio_mostrador_descuento),
                         precio_comercio=VALUES(precio_comercio), precio_comercio_descuento=VALUES(precio_comercio_descuento),
                         precio_ganaderos=VALUES(precio_ganaderos), precio_ganaderos_descuento=VALUES(precio_ganaderos_descuento),
-                        stock_status=VALUES(stock_status), activo=VALUES(activo)"
+                        stock_status=VALUES(stock_status),
+                        stock_actual=VALUES(stock_actual), stock_minimo=VALUES(stock_minimo), stock_maximo=VALUES(stock_maximo),
+                        activo=VALUES(activo)"
                 );
                 $stmt->bind_param(
-                    'sssssssddddddsi',
+                    'sssssssddddddsiiii',
                     $sku, $nombre, $descripcion, $rubro, $subrubro, $laboratorio, $imagenUrl,
-                    $pm, $pmd, $pc, $pcd, $pg, $pgd, $stock, $activo
+                    $pm, $pmd, $pc, $pcd, $pg, $pgd, $stock, $stockActual, $stockMinimo, $stockMaximo, $activo
                 );
                 if (!$stmt->execute()) {
                     throw new RuntimeException($mysqli->error);
@@ -224,7 +237,7 @@ switch ($accion) {
         $codigo = trim((string)($b['codigo_acceso'] ?? ''));
         $nivel = (string)($b['nivel_precio'] ?? 'mostrador');
         if ($nombre === '' || $codigo === '') json_error('Nombre y codigo de acceso son obligatorios.');
-        if (!in_array($nivel, ['mostrador', 'comercio', 'ganaderos'], true)) $nivel = 'mostrador';
+        if (!in_array($nivel, ['mostrador', 'comercio', 'ganaderos', 'sin_precio'], true)) $nivel = 'mostrador';
         $email = (string)($b['email'] ?? '');
         $telefono = (string)($b['telefono'] ?? '');
         $notas = (string)($b['notas'] ?? '');
