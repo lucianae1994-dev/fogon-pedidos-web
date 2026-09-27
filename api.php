@@ -9,6 +9,23 @@ cors();
 $accion = $_GET['accion'] ?? '';
 $mysqli = db();
 
+/** true si a este nivel de cliente se le puede mostrar el precio en el portal.
+ * Definida aca (no en config.php) porque config.php no se despliega por Git
+ * (tiene contrasenas) y este archivo si. */
+function ver_precio(string $nivel): bool {
+    return $nivel !== 'sin_precio';
+}
+
+/** Bucket de stock para el semaforo del portal, a partir de actual/minimo y
+ * el stock_status que ya se usaba. 'agotado' siempre gana (se muestra en rojo
+ * con el texto "Consultar stock"); si no hay datos de minimo/actual cargados,
+ * se asume 'alto' (disponible) para no romper productos viejos sin esos datos. */
+function stock_nivel(?int $actual, ?int $minimo): string {
+    if ($actual !== null && $actual <= 0) return 'agotado';
+    if ($actual !== null && $minimo !== null && $actual <= $minimo) return 'bajo';
+    return 'alto';
+}
+
 function cliente_por_codigo(mysqli $mysqli, string $codigo): ?array {
     $codigo = trim($codigo);
     if ($codigo === '') return null;
