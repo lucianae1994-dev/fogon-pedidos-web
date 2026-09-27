@@ -4,95 +4,95 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>El Fogon - Pedidos</title>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 
-<header class="topbar">
-<div class="brand">El Fog&oacute;n</div>
-<div id="clienteInfo" class="cliente-info hidden">
-<span id="clienteNombre"></span>
-<button id="btnMisPedidos" class="btn-link">Mis pedidos</button>
-<button id="btnSalir" class="btn-link">Salir</button>
-</div>
-</header>
+  <header class="topbar">
+    <div class="brand">El Fog&oacute;n</div>
+    <div id="clienteInfo" class="cliente-info hidden">
+      <span id="clienteNombre"></span>
+      <button id="btnMisPedidos" class="btn-link">Mis pedidos</button>
+      <button id="btnSalir" class="btn-link">Salir</button>
+    </div>
+  </header>
 
-<!-- ================= LOGIN ================= -->
-<main id="vistaLogin" class="vista">
-<div class="login-box">
-<img class="login-logo" src="fotos/logoagroelfogon150.png" alt="El Fog&oacute;n">
-<h1>Pedidos El Fog&oacute;n</h1>
-<p class="muted">Ingres&aacute; tu c&oacute;digo de acceso para ver el cat&aacute;logo y hacer tu pedido.</p>
-<form id="formLogin">
-<input type="text" id="inputCodigo" placeholder="C&oacute;digo de acceso" autocomplete="off" autofocus>
-<button type="submit">Ingresar</button>
-</form>
-<p id="loginError" class="error hidden"></p>
-</div>
-</main>
+  <!-- ================= LOGIN ================= -->
+  <main id="vistaLogin" class="vista">
+    <div class="login-box">
+      <img class="login-logo" src="fotos/logoagroelfogon150.png" alt="El Fog&oacute;n">
+      <h1>Pedidos El Fog&oacute;n</h1>
+      <p class="muted">Ingres&aacute; tu c&oacute;digo de acceso para ver el cat&aacute;logo y hacer tu pedido.</p>
+      <form id="formLogin">
+        <input type="text" id="inputCodigo" placeholder="C&oacute;digo de acceso" autocomplete="off" autofocus>
+        <button type="submit">Ingresar</button>
+      </form>
+      <p id="loginError" class="error hidden"></p>
+    </div>
+  </main>
 
-<!-- ================= CATALOGO ================= -->
-<main id="vistaCatalogo" class="vista hidden">
-<div class="catalogo-layout">
-<aside class="filtros">
-<h2>Rubros</h2>
-<ul id="listaRubros" class="lista-rubros"></ul>
-</aside>
+  <!-- ================= CATALOGO ================= -->
+  <main id="vistaCatalogo" class="vista hidden">
+    <div class="catalogo-layout">
+      <aside class="filtros">
+        <h2>Rubros</h2>
+        <ul id="listaRubros" class="lista-rubros"></ul>
+      </aside>
 
-<section class="productos-panel">
-<div class="toolbar">
-<input type="text" id="buscador" placeholder="Buscar producto...">
-<button id="btnCarrito" class="btn-carrito">
-<span class="carrito-icono" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.4"></circle><circle cx="19" cy="21" r="1.4"></circle><path d="M1.5 1.5h3l2.6 13.6a2 2 0 0 0 2 1.6h9.4a2 2 0 0 0 2-1.6L22.5 6.5H5.4"></path></svg></span> Carrito <span id="carritoCount">0</span>
-</button>
-</div>
-<div id="listaProductos" class="lista-productos"></div>
-</section>
-</div>
-</main>
+      <section class="productos-panel">
+        <div class="toolbar">
+          <input type="text" id="buscador" placeholder="Buscar producto...">
+          <button id="btnCarrito" class="btn-carrito">
+            Carrito <span id="carritoCount">0</span>
+          </button>
+        </div>
+        <div id="listaProductos" class="lista-productos"></div>
+      </section>
+    </div>
+  </main>
 
-<!-- ================= CARRITO (panel lateral) ================= -->
-<div id="panelCarrito" class="panel-carrito hidden">
-<div class="panel-carrito-inner">
-<div class="panel-header">
-<h2>Tu pedido</h2>
-<button id="btnCerrarCarrito" class="btn-link">Cerrar</button>
-</div>
-<div id="carritoItems" class="carrito-items"></div>
-<div class="carrito-footer">
-<textarea id="notasPedido" placeholder="Notas para el pedido (opcional)"></textarea>
-<div class="carrito-total">Total: <strong id="carritoTotal">$ 0</strong></div>
-<button id="btnConfirmarPedido" class="btn-primario">Confirmar pedido</button>
-<p id="carritoError" class="error hidden"></p>
-</div>
-</div>
-</div>
+  <!-- ================= CARRITO (panel lateral) ================= -->
+  <div id="panelCarrito" class="panel-carrito hidden">
+    <div class="panel-carrito-inner">
+      <div class="panel-header">
+        <h2>Tu pedido</h2>
+        <button id="btnCerrarCarrito" class="btn-link">Cerrar</button>
+      </div>
+      <div id="carritoItems" class="carrito-items"></div>
+      <div class="carrito-footer">
+        <textarea id="notasPedido" placeholder="Notas para el pedido (opcional)"></textarea>
+        <div class="carrito-total">Total: <strong id="carritoTotal">$ 0</strong></div>
+        <button id="btnConfirmarPedido" class="btn-primario">Confirmar pedido</button>
+        <p id="carritoError" class="error hidden"></p>
+      </div>
+    </div>
+  </div>
 
-<!-- ================= CONFIRMACION ================= -->
-<main id="vistaConfirmacion" class="vista hidden">
-<div class="confirmacion-box">
-<div class="check">&#10003;</div>
-<h1>Pedido enviado</h1>
-<p id="confPedidoId" class="muted"></p>
-<p id="confFecha" class="muted"></p>
-<div id="confItems" class="conf-items"></div>
-<div class="conf-total">Total: <strong id="confTotal"></strong></div>
-<button id="btnNuevoPedido" class="btn-primario">Hacer otro pedido</button>
-</div>
-</main>
+  <!-- ================= CONFIRMACION ================= -->
+  <main id="vistaConfirmacion" class="vista hidden">
+    <div class="confirmacion-box">
+      <div class="check">&#10003;</div>
+      <h1>Pedido enviado</h1>
+      <p id="confPedidoId" class="muted"></p>
+      <p id="confFecha" class="muted"></p>
+      <div id="confItems" class="conf-items"></div>
+      <div class="conf-total">Total: <strong id="confTotal"></strong></div>
+      <button id="btnNuevoPedido" class="btn-primario">Hacer otro pedido</button>
+    </div>
+  </main>
 
-<!-- ================= MIS PEDIDOS ================= -->
-<main id="vistaMisPedidos" class="vista hidden">
-<div class="mis-pedidos-layout">
-<div class="mis-pedidos-header">
-<h1>Mis pedidos</h1>
-<button id="btnVolverCatalogo" class="btn-link">&larr; Volver al cat&aacute;logo</button>
-</div>
-<div id="listaMisPedidos" class="lista-mis-pedidos"></div>
-</div>
-</main>
+  <!-- ================= MIS PEDIDOS ================= -->
+  <main id="vistaMisPedidos" class="vista hidden">
+    <div class="mis-pedidos-layout">
+      <div class="mis-pedidos-header">
+        <h1>Mis pedidos</h1>
+        <button id="btnVolverCatalogo" class="btn-link">&larr; Volver al cat&aacute;logo</button>
+      </div>
+      <div id="listaMisPedidos" class="lista-mis-pedidos"></div>
+    </div>
+  </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="app.js?v=5"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
