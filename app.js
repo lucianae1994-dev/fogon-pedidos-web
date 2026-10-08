@@ -6,6 +6,35 @@ let productos = [];
 let rubroActivo = 'Todos';
 let carrito = {}; // sku -> {producto, cantidad}
 
+function esInvitado() {
+  return !!(clienteActual && clienteActual.invitado);
+}
+
+// Credenciales que se mandan en cada llamada: codigo de acceso o modo invitado.
+function credenciales() {
+  return esInvitado() ? { invitado: true } : { codigo: codigoActual };
+}
+
+// Cantidad maxima por pedido de un producto (null = sin limite).
+function maxCant(p) {
+  return p.max_cantidad === null || p.max_cantidad === undefined ? Infinity : p.max_cantidad;
+}
+
+let toastTimer = null;
+function toast(msg) {
+  let t = $('#toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.className = 'toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('visible'), 3500);
+}
+
 // false para el acceso "sin_precio": solo pedidos, sin ver ningun monto.
 function verPrecio() {
   return !clienteActual || clienteActual.ver_precio !== false;
@@ -59,6 +88,30 @@ $('#formLogin').addEventListener('submit', async (e) => {
   }
 });
 
+$('#btnInvitado').addEventListener('click', async () => {
+  $('#loginError').classList.add('hidden');
+  try {
+    const data = await llamar('login_invitado', {});
+    codigoActual = '';
+    clienteActual = data.cliente;
+    await entrarCatalogo();
+  } catch (err) {
+    $('#loginError').textContent = err.message;
+    $('#loginError').classList.remove('hidden');
+  }
+});
+
+// Ajusta textos y campos segun sea cliente con codigo o invitado.
+function aplicarModoInvitado() {
+  const inv = esInvitado();
+  $('#btnMisPedidos').classList.toggle('hidden', inv);
+  $('#contactoInvitado').classList.toggle('hidden', !inv);
+  $('#panelTitulo').textContent = inv ? 'Tu cotizaci\u00f3n' : 'Tu pedido';
+  $('#btnConfirmarPedido').textContent = inv ? 'Solicitar cotizaci\u00f3n' : 'Confirmar pedido';
+  $('#btnCarritoTexto').textContent = inv ? 'Cotizaci\u00f3n' : 'Carrito';
+  $('#avisoInvitado').classList.toggle('hidden', !inv);
+}
+
 $('#btnSalir').addEventListener('click', () => {
   localStorage.removeItem('fogon_codigo');
   codigoActual = '';
@@ -73,8 +126,9 @@ $('#btnSalir').addEventListener('click', () => {
 $('#btnVolverCatalogo').addEventListener('click', () => mostrarVista('#vistaCatalogo'));
 
 async function entrarCatalogo() {
-  const data = await llamar('catalogo', { codigo: codigoActual });
+  const data = await llamar('catalogo', credenciales());
   productos = data.productos;
+  aplicarModoInvitado();
   rubroActivo = 'Todos';
   $('#clienteNombre').textContent = clienteActual.nombre;
   $('#clienteInfo').classList.remove('hidden');
@@ -157,6 +211,7 @@ function renderProductos() {
         <div class="producto-nombre"><span class="stock-dot ${badge.dot}" title="${badge.texto}"></span>${escapeHtml(p.nombre)}</div>
         <div class="producto-sub">${escapeHtml([p.laboratorio, p.subrubro].filter(Boolean).join(' · '))}</div>
         ${sinStock ? '<div class="sin-stock-aviso">Se pide sujeto a confirmacion de stock</div>' : ''}
+        ${maxCant(p) !== Infinity ? `<div class="max-aviso">M\u00e1x. ${maxCant(p)} por pedido</div>` : ''}
       </div>
       ${verPrecio() ? `<div class="producto-precio-row">${precioHtml}</div>` : ''}
       <div class="producto-footer">
@@ -177,7 +232,12 @@ function renderProductos() {
     });
     card.querySelector('[data-accion="mas"]').addEventListener('click', (e) => {
       e.stopPropagation();
-      qtyInput.value = parseInt(qtyInput.value, 10) + 1;
+      const sig = parseInt(qtyInput.value, 10) + 1;
+      if (sig > maxCant(p)) {
+        toast(`M\u00e1ximo ${maxCant(p)} unidad(es) por pedido de este producto.`);
+        return;
+      }
+      qtyInput.value = sig;
     });
     card.querySelector('[data-accion="agregar"]').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -223,6 +283,7 @@ function abrirDetalleProducto(p, sinStock, badge) {
     precioRow.innerHTML = p.precio_descuento
       ? `<span class="precio-tachado">${money(p.precio_regular)}</span><span class="precio-actual">${money(p.precio_descuento)}</span>`
       : `<span class="precio-actual">${money(p.precio)}</span>`;
+    if (p.iva_incluido) precioRow.innerHTML += '<span class="max-aviso">&nbsp;IVA incluido</span>';
   } else {
     precioRow.classList.add('hidden');
     precioRow.innerHTML = '';
@@ -235,8 +296,14 @@ function abrirDetalleProducto(p, sinStock, badge) {
     qtyInput.value = Math.max(1, parseInt(qtyInput.value, 10) - 1);
   };
   $('#modalQtyMas').onclick = () => {
-    qtyInput.value = parseInt(qtyInput.value, 10) + 1;
+    const sig = parseInt(qtyInput.value, 10) + 1;
+    if (sig > maxCant(p)) {
+      toast(`M\u00e1ximo ${maxCant(p)} unidad(es) por pedido de este producto.`);
+      return;
+    }
+    qtyInput.value = sig;
   };
+  $('#modalProductoMax').textContent = maxCant(p) !== Infinity ? `M\u00e1x. ${maxCant(p)} por pedido` : '';
   $('#modalBtnAgregar').onclick = () => {
     agregarAlCarrito(p, parseInt(qtyInput.value, 10), sinStock);
     cerrarModalProducto();
@@ -260,7 +327,12 @@ document.addEventListener('keydown', (e) => {
 // ---------------------------------------------------------------- carrito
 function agregarAlCarrito(producto, cantidad, sinStock) {
   const actual = carrito[producto.sku]?.cantidad || 0;
-  carrito[producto.sku] = { producto, cantidad: actual + cantidad, sinStock: !!sinStock };
+  let nueva = actual + cantidad;
+  if (nueva > maxCant(producto)) {
+    nueva = maxCant(producto);
+    toast(`M\u00e1ximo ${nueva} unidad(es) por pedido de "${producto.nombre}".`);
+  }
+  carrito[producto.sku] = { producto, cantidad: nueva, sinStock: !!sinStock };
   actualizarCarritoUI();
 }
 
@@ -310,9 +382,21 @@ $('#btnConfirmarPedido').addEventListener('click', async () => {
     $('#carritoError').classList.remove('hidden');
     return;
   }
+  const extra = {};
+  if (esInvitado()) {
+    extra.contacto_nombre = $('#contactoNombre').value.trim();
+    extra.contacto_telefono = $('#contactoTelefono').value.trim();
+    extra.contacto_email = $('#contactoEmail').value.trim();
+    if (!extra.contacto_nombre || (!extra.contacto_telefono && !extra.contacto_email)) {
+      $('#carritoError').textContent = 'Ingres\u00e1 tu nombre y un tel\u00e9fono o email de contacto.';
+      $('#carritoError').classList.remove('hidden');
+      return;
+    }
+  }
   try {
     const data = await llamar('pedido_crear', {
-      codigo: codigoActual,
+      ...credenciales(),
+      ...extra,
       items,
       notas: $('#notasPedido').value.trim(),
     });
@@ -331,7 +415,11 @@ let pedidoConfirmadoActual = null;
 
 function mostrarConfirmacion(pedido) {
   pedidoConfirmadoActual = pedido;
-  $('#confPedidoId').textContent = `Pedido #${pedido.id}`;
+  const cot = pedido.tipo === 'cotizacion';
+  $('#confTitulo').textContent = cot ? 'Cotizaci\u00f3n enviada' : 'Pedido enviado';
+  $('#confMensajeCot').classList.toggle('hidden', !cot);
+  $('.conf-qr').classList.toggle('hidden', cot);
+  $('#confPedidoId').textContent = `${cot ? 'Cotizaci\u00f3n' : 'Pedido'} #${pedido.id}`;
   const fecha = new Date(pedido.creado_en.replace(' ', 'T'));
   $('#confFecha').textContent = fecha.toLocaleString('es-AR', {
     dateStyle: 'long',
@@ -381,7 +469,7 @@ $('#btnMisPedidos').addEventListener('click', async () => {
   cont.innerHTML = '<p class="muted">Cargando tus pedidos...</p>';
   mostrarVista('#vistaMisPedidos');
   try {
-    const data = await llamar('mis_pedidos', { codigo: codigoActual });
+    const data = await llamar('mis_pedidos', credenciales());
     misPedidosCache = data.pedidos || [];
     renderMisPedidos(misPedidosCache);
   } catch (err) {
@@ -453,13 +541,14 @@ function exportarPedidoPDF(pedido) {
   doc.text('El Fogón', margenIzq, y);
   y += 9;
   doc.setFontSize(13);
-  doc.text(`Pedido #${pedido.id}`, margenIzq, y);
+  doc.text(`${pedido.tipo === 'cotizacion' ? 'Solicitud de cotizaci\u00f3n' : 'Pedido'} #${pedido.id}`, margenIzq, y);
   y += 7;
   doc.setFontSize(10);
   doc.setTextColor(100);
   doc.text(fechaLegible(pedido.creado_en), margenIzq, y);
-  if (clienteActual && clienteActual.nombre) {
-    doc.text(`Cliente: ${clienteActual.nombre}`, margenDer, y, { align: 'right' });
+  const quien = pedido.tipo === 'cotizacion' ? pedido.cliente : (clienteActual && clienteActual.nombre);
+  if (quien) {
+    doc.text(`Cliente: ${quien}`, margenDer, y, { align: 'right' });
   }
   doc.setTextColor(0);
   y += 10;
@@ -508,8 +597,8 @@ function exportarPedidoPDF(pedido) {
   if (verPrecio()) {
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(`Total: ${money(pedido.total)}`, margenDer, y, { align: 'right' });
+    doc.text(`Total (IVA incl.): ${money(pedido.total)}`, margenDer, y, { align: 'right' });
   }
 
-  doc.save(`pedido-${pedido.id}.pdf`);
+  doc.save(`${pedido.tipo === 'cotizacion' ? 'cotizacion' : 'pedido'}-${pedido.id}.pdf`);
 }

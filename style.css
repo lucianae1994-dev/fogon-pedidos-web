@@ -351,3 +351,20 @@ body { overflow-x: hidden; }
   .pedido-card { padding: 14px 12px; }
   .pedido-card-footer { flex-wrap: wrap; gap: 8px; }
 }
+
+/* Promo y QR de pago */
+.promo-banner { display: block; width: 100%; max-width: 900px; height: auto; border-radius: 10px; margin: 0 0 14px; }
+.conf-qr { margin: 18px 0; text-align: center; }
+.conf-qr-titulo { font-weight: 600; margin: 0 0 8px; }
+.conf-qr img { width: 100%; max-width: 280px; height: auto; border-radius: 10px; }
+
+/* Limites e invitado */
+.max-aviso { font-size: 12px; color: var(--muted, #6b7280); margin-top: 2px; }
+.login-sep { text-align: center; margin: 14px 0 10px; color: #9ca3af; font-size: 13px; }
+.btn-secundario { width: 100%; padding: 11px 14px; border: 1px solid var(--border, #d1d5db); background: #fff; border-radius: 8px; font-size: 14px; cursor: pointer; }
+.btn-secundario:hover { background: #f3f4f6; }
+.contacto-invitado { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.contacto-invitado input { padding: 10px; border: 1px solid var(--border, #d1d5db); border-radius: 8px; font-size: 14px; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: #1f2937; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 9999; max-width: 90vw; text-align: center; }
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+@media (max-width: 560px) { .contacto-invitado input { font-size: 16px; } }

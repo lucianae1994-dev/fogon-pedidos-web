@@ -84,6 +84,26 @@ switch ($accion) {
                 $stockMaximo = ctype_digit((string)($p['stock_maximo'] ?? '')) ? (int)$p['stock_maximo'] : null;
 
                 $stmt->execute();
+                if (array_key_exists('precio_venta_plus', $p)) {
+                    $vp = (float)($p['precio_venta_plus'] ?? 0);
+                    $vpd = (isset($p['precio_venta_plus_descuento']) && $p['precio_venta_plus_descuento'] !== null && $p['precio_venta_plus_descuento'] !== '')
+                        ? (float)$p['precio_venta_plus_descuento'] : null;
+                    $stmtV = $mysqli->prepare("UPDATE productos SET precio_venta_plus=?, precio_venta_plus_descuento=? WHERE sku=?");
+                    $stmtV->bind_param('dds', $vp, $vpd, $sku);
+                    $stmtV->execute();
+                }
+                if (array_key_exists('aplica_iva', $p)) {
+                    $ai = !empty($p['aplica_iva']) ? 1 : 0;
+                    $stmtA = $mysqli->prepare("UPDATE productos SET aplica_iva=? WHERE sku=?");
+                    $stmtA->bind_param('is', $ai, $sku);
+                    $stmtA->execute();
+                }
+                if (array_key_exists('max_por_pedido', $p)) {
+                    $mp = ($p['max_por_pedido'] !== null && ctype_digit((string)$p['max_por_pedido'])) ? (int)$p['max_por_pedido'] : null;
+                    $stmtM = $mysqli->prepare("UPDATE productos SET max_por_pedido=? WHERE sku=?");
+                    $stmtM->bind_param('is', $mp, $sku);
+                    $stmtM->execute();
+                }
             }
 
             // Cualquier producto que ya estaba en la base y no vino en este sync
@@ -203,6 +223,26 @@ switch ($accion) {
                     throw new RuntimeException($mysqli->error);
                 }
             }
+            if (array_key_exists('precio_venta_plus', $b)) {
+                $vp = (float)($b['precio_venta_plus'] ?? 0);
+                $vpd = (isset($b['precio_venta_plus_descuento']) && $b['precio_venta_plus_descuento'] !== null && $b['precio_venta_plus_descuento'] !== '')
+                    ? (float)$b['precio_venta_plus_descuento'] : null;
+                $stmtV = $mysqli->prepare("UPDATE productos SET precio_venta_plus=?, precio_venta_plus_descuento=? WHERE sku=?");
+                $stmtV->bind_param('dds', $vp, $vpd, $sku);
+                $stmtV->execute();
+            }
+            if (array_key_exists('aplica_iva', $b)) {
+                $ai = !empty($b['aplica_iva']) ? 1 : 0;
+                $stmtA = $mysqli->prepare("UPDATE productos SET aplica_iva=? WHERE sku=?");
+                $stmtA->bind_param('is', $ai, $sku);
+                $stmtA->execute();
+            }
+            if (array_key_exists('max_por_pedido', $b)) {
+                $mp = ($b['max_por_pedido'] !== null && ctype_digit((string)$b['max_por_pedido'])) ? (int)$b['max_por_pedido'] : null;
+                $stmtM = $mysqli->prepare("UPDATE productos SET max_por_pedido=? WHERE sku=?");
+                $stmtM->bind_param('is', $mp, $sku);
+                $stmtM->execute();
+            }
             json_out(['ok' => true, 'sku' => $sku]);
         } catch (Throwable $e) {
             json_error('Error al guardar el producto: ' . $e->getMessage(), 500);
@@ -226,7 +266,7 @@ switch ($accion) {
 
     // ------------------------------------------------------------------
     case 'clientes_listar':
-        $res = $mysqli->query("SELECT * FROM clientes ORDER BY nombre ASC");
+        $res = $mysqli->query("SELECT * FROM clientes WHERE es_invitado=0 ORDER BY nombre ASC");
         json_out(['clientes' => $res->fetch_all(MYSQLI_ASSOC)]);
         break;
 
@@ -237,22 +277,24 @@ switch ($accion) {
         $codigo = trim((string)($b['codigo_acceso'] ?? ''));
         $nivel = (string)($b['nivel_precio'] ?? 'mostrador');
         if ($nombre === '' || $codigo === '') json_error('Nombre y codigo de acceso son obligatorios.');
-        if (!in_array($nivel, ['mostrador', 'comercio', 'ganaderos', 'sin_precio'], true)) $nivel = 'mostrador';
+        if (!in_array($nivel, ['mostrador', 'comercio', 'ganaderos', 'venta_plus', 'sin_precio'], true)) $nivel = 'mostrador';
         $email = (string)($b['email'] ?? '');
         $telefono = (string)($b['telefono'] ?? '');
         $notas = (string)($b['notas'] ?? '');
         $activo = isset($b['activo']) ? (int)!!$b['activo'] : 1;
+        $maxDia = (isset($b['max_pedidos_dia']) && $b['max_pedidos_dia'] !== '' && ctype_digit((string)$b['max_pedidos_dia']))
+            ? (int)$b['max_pedidos_dia'] : null;
 
         if ($id > 0) {
             $stmt = $mysqli->prepare(
-                "UPDATE clientes SET nombre=?, codigo_acceso=?, nivel_precio=?, email=?, telefono=?, notas=?, activo=? WHERE id=?"
+                "UPDATE clientes SET nombre=?, codigo_acceso=?, nivel_precio=?, email=?, telefono=?, notas=?, activo=?, max_pedidos_dia=? WHERE id=?"
             );
-            $stmt->bind_param('ssssssii', $nombre, $codigo, $nivel, $email, $telefono, $notas, $activo, $id);
+            $stmt->bind_param('ssssssiii', $nombre, $codigo, $nivel, $email, $telefono, $notas, $activo, $maxDia, $id);
         } else {
             $stmt = $mysqli->prepare(
-                "INSERT INTO clientes (nombre, codigo_acceso, nivel_precio, email, telefono, notas, activo) VALUES (?,?,?,?,?,?,?)"
+                "INSERT INTO clientes (nombre, codigo_acceso, nivel_precio, email, telefono, notas, activo, max_pedidos_dia) VALUES (?,?,?,?,?,?,?,?)"
             );
-            $stmt->bind_param('ssssssi', $nombre, $codigo, $nivel, $email, $telefono, $notas, $activo);
+            $stmt->bind_param('ssssssii', $nombre, $codigo, $nivel, $email, $telefono, $notas, $activo, $maxDia);
         }
         if (!$stmt->execute()) {
             $dup = $mysqli->errno === 1062;
@@ -283,7 +325,8 @@ switch ($accion) {
     // ------------------------------------------------------------------
     case 'pedidos_listar':
         $estado = $_GET['estado'] ?? '';
-        $sql = "SELECT p.*, c.nombre AS cliente_nombre, c.codigo_acceso
+        $sql = "SELECT p.*, IF(p.tipo='cotizacion', CONCAT('COTIZACION - ', p.contacto_nombre), c.nombre) AS cliente_nombre,
+                       IF(p.tipo='cotizacion', 'invitado', c.codigo_acceso) AS codigo_acceso
                 FROM pedidos p JOIN clientes c ON c.id = p.cliente_id";
         if ($estado !== '') {
             $stmt = $mysqli->prepare($sql . " WHERE p.estado=? ORDER BY p.creado_en DESC");
@@ -299,7 +342,8 @@ switch ($accion) {
     case 'pedido_detalle':
         $id = (int)($_GET['id'] ?? 0);
         $stmt = $mysqli->prepare(
-            "SELECT p.*, c.nombre AS cliente_nombre, c.codigo_acceso
+            "SELECT p.*, IF(p.tipo='cotizacion', CONCAT('COTIZACION - ', p.contacto_nombre), c.nombre) AS cliente_nombre,
+                    IF(p.tipo='cotizacion', 'invitado', c.codigo_acceso) AS codigo_acceso
              FROM pedidos p JOIN clientes c ON c.id = p.cliente_id WHERE p.id=?"
         );
         $stmt->bind_param('i', $id);
@@ -327,6 +371,29 @@ switch ($accion) {
         );
         $stmt->bind_param('ssi', $estado, $estado, $id);
         $stmt->execute();
+        json_out(['ok' => true]);
+        break;
+
+    // ------------------------------------------------------------------
+    // Valores por defecto de limites (0 = sin limite).
+    case 'config_get':
+        $out = ['max_unidades_default' => 10, 'max_pedidos_dia_default' => 5, 'max_cotizaciones_dia_invitado' => 3];
+        $res = $mysqli->query("SELECT clave, valor FROM config_portal");
+        while ($r = $res->fetch_assoc()) {
+            if (array_key_exists($r['clave'], $out)) $out[$r['clave']] = (int)$r['valor'];
+        }
+        json_out(['config' => $out]);
+        break;
+
+    case 'config_set':
+        $b = body_json();
+        $stmt = $mysqli->prepare("INSERT INTO config_portal (clave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor=VALUES(valor)");
+        foreach (['max_unidades_default', 'max_pedidos_dia_default', 'max_cotizaciones_dia_invitado'] as $k) {
+            if (!isset($b[$k]) || !ctype_digit((string)$b[$k])) continue;
+            $v = (string)(int)$b[$k];
+            $stmt->bind_param('ss', $k, $v);
+            $stmt->execute();
+        }
         json_out(['ok' => true]);
         break;
 

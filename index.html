@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>El Fogon - Pedidos</title>
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
@@ -28,6 +28,8 @@
         <button type="submit">Ingresar</button>
       </form>
       <p id="loginError" class="error hidden"></p>
+      <div class="login-sep"><span>o</span></div>
+      <button type="button" id="btnInvitado" class="btn-secundario">Entrar como invitado y solicitar cotizaci&oacute;n</button>
     </div>
   </main>
 
@@ -43,9 +45,10 @@
         <div class="toolbar">
           <input type="text" id="buscador" placeholder="Buscar producto...">
           <button id="btnCarrito" class="btn-carrito">
-            Carrito <span id="carritoCount">0</span>
+            <span id="btnCarritoTexto">Carrito</span> <span id="carritoCount">0</span>
           </button>
         </div>
+        <img class="promo-banner" src="img/promo-cuotas.jpg" alt="Hasta el 30/11, mi&eacute;rcoles y s&aacute;bados, 3 cuotas sin inter&eacute;s">
         <div id="listaProductos" class="lista-productos"></div>
       </section>
     </div>
@@ -55,13 +58,19 @@
   <div id="panelCarrito" class="panel-carrito hidden">
     <div class="panel-carrito-inner">
       <div class="panel-header">
-        <h2>Tu pedido</h2>
+        <h2 id="panelTitulo">Tu pedido</h2>
         <button id="btnCerrarCarrito" class="btn-link">Cerrar</button>
       </div>
       <div id="carritoItems" class="carrito-items"></div>
       <div class="carrito-footer">
+        <p id="avisoInvitado" class="muted hidden">Los precios son de lista y la cotizaci&oacute;n queda sujeta a confirmaci&oacute;n. Te contactaremos.</p>
+        <div id="contactoInvitado" class="contacto-invitado hidden">
+          <input type="text" id="contactoNombre" placeholder="Tu nombre o empresa *" autocomplete="name">
+          <input type="tel" id="contactoTelefono" placeholder="Tel&eacute;fono / WhatsApp" autocomplete="tel">
+          <input type="email" id="contactoEmail" placeholder="Email" autocomplete="email">
+        </div>
         <textarea id="notasPedido" placeholder="Notas para el pedido (opcional)"></textarea>
-        <div class="carrito-total">Total: <strong id="carritoTotal">$ 0</strong></div>
+        <div class="carrito-total">Total (IVA incl.): <strong id="carritoTotal">$ 0</strong></div>
         <button id="btnConfirmarPedido" class="btn-primario">Confirmar pedido</button>
         <p id="carritoError" class="error hidden"></p>
       </div>
@@ -72,11 +81,16 @@
   <main id="vistaConfirmacion" class="vista hidden">
     <div class="confirmacion-box">
       <div class="check">&#10003;</div>
-      <h1>Pedido enviado</h1>
+      <h1 id="confTitulo">Pedido enviado</h1>
+      <p id="confMensajeCot" class="muted hidden">Recibimos tu solicitud. Te vamos a contactar con la cotizaci&oacute;n.</p>
       <p id="confPedidoId" class="muted"></p>
       <p id="confFecha" class="muted"></p>
       <div id="confItems" class="conf-items"></div>
-      <div class="conf-total">Total: <strong id="confTotal"></strong></div>
+      <div class="conf-total">Total (IVA incl.): <strong id="confTotal"></strong></div>
+      <div class="conf-qr">
+        <p class="conf-qr-titulo">Pod&eacute;s pagar con QR</p>
+        <img src="img/qr-pago.jpg" alt="QR de pago Payway">
+      </div>
       <div class="conf-botones">
         <button id="btnDescargarPdfConf" class="btn-link" type="button">Descargar PDF</button>
         <button id="btnNuevoPedido" class="btn-primario">Hacer otro pedido</button>
@@ -96,6 +110,7 @@
         <div class="modal-producto-nombre"><span id="modalProductoDot" class="stock-dot"></span><span id="modalProductoNombre"></span></div>
         <div id="modalProductoSub" class="producto-sub"></div>
         <p id="modalProductoDescripcion" class="modal-producto-desc"></p>
+        <div id="modalProductoMax" class="max-aviso"></div>
         <div id="modalProductoAviso" class="sin-stock-aviso hidden">Se pide sujeto a confirmacion de stock</div>
         <div id="modalProductoPrecioRow" class="producto-precio-row modal-precio-row"></div>
         <div class="producto-footer modal-footer">
@@ -123,6 +138,6 @@
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>
