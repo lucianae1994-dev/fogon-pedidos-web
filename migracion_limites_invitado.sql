@@ -32,7 +32,7 @@ INSERT IGNORE INTO config_portal (clave, valor) VALUES
 
 -- 5) Cliente interno que representa a los invitados (no se usa para entrar con codigo).
 INSERT INTO clientes (nombre, codigo_acceso, nivel_precio, es_invitado, activo)
-VALUES ('INVITADO (cotizaciones)', CONCAT('INV-', UPPER(SUBSTRING(MD5(RAND()),1,12))), 'mostrador', 1, 1);
+VALUES ('INVITADO (cotizaciones)', CONCAT('INV-', UPPER(SUBSTRING(MD5(RAND()),1,12))), 'sin_precio', 1, 1);
 
 -- 6) IVA 21%: los precios cargados son NETOS; si aplica_iva=1 el portal y los
 --    pedidos usan precio * 1.21. En cada renglon del pedido se guarda la

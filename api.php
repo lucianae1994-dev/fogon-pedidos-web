@@ -99,6 +99,8 @@ function iva_alicuota_producto(array $prod): float {
 function cliente_invitado(mysqli $mysqli): ?array {
     $res = $mysqli->query("SELECT * FROM clientes WHERE es_invitado=1 AND activo=1 LIMIT 1");
     $c = $res ? $res->fetch_assoc() : null;
+    // El invitado NUNCA ve precios (siempre nivel sin_precio), sin importar lo guardado en la base.
+    if ($c) $c['nivel_precio'] = 'sin_precio';
     return $c ?: null;
 }
 
