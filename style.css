@@ -368,3 +368,9 @@ body { overflow-x: hidden; }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: #1f2937; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 9999; max-width: 90vw; text-align: center; }
 .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 @media (max-width: 560px) { .contacto-invitado input { font-size: 16px; } }
+
+.promo-cartel { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px; margin: 0 0 14px; padding: 12px 16px; background: #fff7d6; border: 2px solid #f0b400; border-radius: 10px; text-align: center; color: #1f2937; }
+.promo-fecha { font-weight: 800; font-size: 18px; text-transform: uppercase; }
+.promo-texto { font-weight: 700; font-size: 16px; text-transform: uppercase; }
+.promo-destacado { font-weight: 800; font-size: 18px; text-transform: uppercase; color: #fff; background: #2f6f4f; padding: 4px 12px; border-radius: 999px; }
+@media (max-width: 560px) { .promo-fecha, .promo-destacado { font-size: 15px; } .promo-texto { font-size: 14px; } }
