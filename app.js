@@ -283,7 +283,6 @@ function abrirDetalleProducto(p, sinStock, badge) {
     precioRow.innerHTML = p.precio_descuento
       ? `<span class="precio-tachado">${money(p.precio_regular)}</span><span class="precio-actual">${money(p.precio_descuento)}</span>`
       : `<span class="precio-actual">${money(p.precio)}</span>`;
-    if (p.iva_incluido) precioRow.innerHTML += '<span class="max-aviso">&nbsp;IVA incluido</span>';
   } else {
     precioRow.classList.add('hidden');
     precioRow.innerHTML = '';
@@ -597,7 +596,7 @@ function exportarPedidoPDF(pedido) {
   if (verPrecio()) {
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(`Total (IVA incl.): ${money(pedido.total)}`, margenDer, y, { align: 'right' });
+    doc.text(`Total: ${money(pedido.total)}`, margenDer, y, { align: 'right' });
   }
 
   doc.save(`${pedido.tipo === 'cotizacion' ? 'cotizacion' : 'pedido'}-${pedido.id}.pdf`);

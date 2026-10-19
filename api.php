@@ -81,21 +81,6 @@ function precio_nivel(array $producto, string $nivel): array {
     return ['precio' => $desc ?? $base, 'precio_regular' => $base, 'precio_descuento' => $desc];
 }
 
-const IVA_PORC = 21.0;
-
-/** Aplica el IVA al precio (los precios cargados son netos). Si el producto
- * tiene aplica_iva=0 devuelve el precio tal cual. */
-function con_iva(?float $v, array $prod): ?float {
-    if ($v === null) return null;
-    $aplica = !array_key_exists('aplica_iva', $prod) || (int)$prod['aplica_iva'] === 1;
-    return $aplica ? round($v * (1 + IVA_PORC / 100), 2) : $v;
-}
-
-function iva_alicuota_producto(array $prod): float {
-    $aplica = !array_key_exists('aplica_iva', $prod) || (int)$prod['aplica_iva'] === 1;
-    return $aplica ? IVA_PORC : 0.0;
-}
-
 function cliente_invitado(mysqli $mysqli): ?array {
     $res = $mysqli->query("SELECT * FROM clientes WHERE es_invitado=1 AND activo=1 LIMIT 1");
     $c = $res ? $res->fetch_assoc() : null;
@@ -169,7 +154,7 @@ switch ($accion) {
         $defUnidades = config_num($mysqli, 'max_unidades_default', 10);
 
         $res = $mysqli->query(
-            "SELECT id, sku, nombre, descripcion, rubro, subrubro, laboratorio, imagen_url, max_por_pedido, aplica_iva,
+            "SELECT id, sku, nombre, descripcion, rubro, subrubro, laboratorio, imagen_url, max_por_pedido,
                     precio_mostrador, precio_mostrador_descuento,
                     precio_comercio, precio_comercio_descuento,
                     precio_ganaderos, precio_ganaderos_descuento,
@@ -201,10 +186,9 @@ switch ($accion) {
                 'stock_maximo' => $maximo,
                 'stock_nivel' => $nivelStock,
                 'max_cantidad' => max_cantidad_producto($p, $defUnidades),
-                'precio' => $verPrecio ? con_iva($precios['precio'], $p) : null,
-                'precio_regular' => $verPrecio ? con_iva($precios['precio_regular'], $p) : null,
-                'precio_descuento' => $verPrecio ? con_iva($precios['precio_descuento'], $p) : null,
-                'iva_incluido' => iva_alicuota_producto($p) > 0,
+                'precio' => $verPrecio ? $precios['precio'] : null,
+                'precio_regular' => $verPrecio ? $precios['precio_regular'] : null,
+                'precio_descuento' => $verPrecio ? $precios['precio_descuento'] : null,
             ];
         }
         json_out(['productos' => $productos, 'nivel_precio' => $cliente['nivel_precio'], 'ver_precio' => $verPrecio, 'invitado' => (bool)$cliente['es_invitado']]);
@@ -292,7 +276,7 @@ switch ($accion) {
                 json_error('Maximo ' . $maxC . ' unidad(es) por pedido de "' . $prod['nombre'] . '". Ajusta la cantidad y volve a enviar.');
             }
             $precios = precio_nivel($prod, $cliente['nivel_precio']);
-            $precioFinal = con_iva($precios['precio'], $prod);
+            $precioFinal = $precios['precio'];
             $subtotal = round($precioFinal * $cantidad, 2);
             $total += $subtotal;
             $lineas[] = [
@@ -301,7 +285,6 @@ switch ($accion) {
                 'nombre' => $prod['nombre'],
                 'cantidad' => $cantidad,
                 'precio_unitario' => $precioFinal,
-                'iva_alicuota' => iva_alicuota_producto($prod),
                 'subtotal' => $subtotal,
                 'sin_stock_confirmar' => producto_sin_stock($prod) ? 1 : 0,
             ];
@@ -328,14 +311,14 @@ switch ($accion) {
             $pedidoId = $mysqli->insert_id;
 
             $stmtI = $mysqli->prepare(
-                "INSERT INTO pedido_items (pedido_id, producto_id, sku, nombre, cantidad, precio_unitario, subtotal, sin_stock_confirmar, iva_alicuota)
-                 VALUES (?,?,?,?,?,?,?,?,?)"
+                "INSERT INTO pedido_items (pedido_id, producto_id, sku, nombre, cantidad, precio_unitario, subtotal, sin_stock_confirmar)
+                 VALUES (?,?,?,?,?,?,?,?)"
             );
             foreach ($lineas as $l) {
                 $stmtI->bind_param(
-                    'iissiddid',
+                    'iissiddi',
                     $pedidoId, $l['producto_id'], $l['sku'], $l['nombre'],
-                    $l['cantidad'], $l['precio_unitario'], $l['subtotal'], $l['sin_stock_confirmar'], $l['iva_alicuota']
+                    $l['cantidad'], $l['precio_unitario'], $l['subtotal'], $l['sin_stock_confirmar']
                 );
                 $stmtI->execute();
             }

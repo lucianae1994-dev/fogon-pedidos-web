@@ -92,12 +92,6 @@ switch ($accion) {
                     $stmtV->bind_param('dds', $vp, $vpd, $sku);
                     $stmtV->execute();
                 }
-                if (array_key_exists('aplica_iva', $p)) {
-                    $ai = !empty($p['aplica_iva']) ? 1 : 0;
-                    $stmtA = $mysqli->prepare("UPDATE productos SET aplica_iva=? WHERE sku=?");
-                    $stmtA->bind_param('is', $ai, $sku);
-                    $stmtA->execute();
-                }
                 if (array_key_exists('max_por_pedido', $p)) {
                     $mp = ($p['max_por_pedido'] !== null && ctype_digit((string)$p['max_por_pedido'])) ? (int)$p['max_por_pedido'] : null;
                     $stmtM = $mysqli->prepare("UPDATE productos SET max_por_pedido=? WHERE sku=?");
@@ -230,12 +224,6 @@ switch ($accion) {
                 $stmtV = $mysqli->prepare("UPDATE productos SET precio_venta_plus=?, precio_venta_plus_descuento=? WHERE sku=?");
                 $stmtV->bind_param('dds', $vp, $vpd, $sku);
                 $stmtV->execute();
-            }
-            if (array_key_exists('aplica_iva', $b)) {
-                $ai = !empty($b['aplica_iva']) ? 1 : 0;
-                $stmtA = $mysqli->prepare("UPDATE productos SET aplica_iva=? WHERE sku=?");
-                $stmtA->bind_param('is', $ai, $sku);
-                $stmtA->execute();
             }
             if (array_key_exists('max_por_pedido', $b)) {
                 $mp = ($b['max_por_pedido'] !== null && ctype_digit((string)$b['max_por_pedido'])) ? (int)$b['max_por_pedido'] : null;

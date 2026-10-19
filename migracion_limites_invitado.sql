@@ -34,15 +34,7 @@ INSERT IGNORE INTO config_portal (clave, valor) VALUES
 INSERT INTO clientes (nombre, codigo_acceso, nivel_precio, es_invitado, activo)
 VALUES ('INVITADO (cotizaciones)', CONCAT('INV-', UPPER(SUBSTRING(MD5(RAND()),1,12))), 'sin_precio', 1, 1);
 
--- 6) IVA 21%: los precios cargados son NETOS; si aplica_iva=1 el portal y los
---    pedidos usan precio * 1.21. En cada renglon del pedido se guarda la
---    alicuota usada (0 = sin IVA / pedidos viejos) para poder desglosar.
-ALTER TABLE productos
-    ADD COLUMN aplica_iva TINYINT(1) NOT NULL DEFAULT 1 AFTER max_por_pedido;
-ALTER TABLE pedido_items
-    ADD COLUMN iva_alicuota DECIMAL(5,2) NOT NULL DEFAULT 0 AFTER sin_stock_confirmar;
-
--- 7) Nuevo nivel de precio VENTA PLUS ("Ganaderos" pasa a llamarse VENTA solo
+-- 6) Nuevo nivel de precio VENTA PLUS ("Ganaderos" pasa a llamarse VENTA solo
 --    en pantalla; internamente sigue siendo 'ganaderos').
 ALTER TABLE productos
     ADD COLUMN precio_venta_plus DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER precio_ganaderos_descuento,
