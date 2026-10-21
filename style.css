@@ -376,3 +376,72 @@ body { overflow-x: hidden; }
 .modal-oferta-box { max-width: min(92vw, 520px); padding: 12px; background: #fff; }
 .modal-oferta-img { display: block; width: 100%; max-height: 82vh; object-fit: contain; border-radius: 8px; }
 @media (max-width: 960px) { .ofertas-grid { grid-template-columns: repeat(2, 1fr); } }
+
+
+/* =====================================================================
+   Look de tienda online (tarjetas, ofertas en carrusel, barra superior)
+   ===================================================================== */
+:root { --accent: #f0b400; --shadow: 0 2px 10px rgba(16, 24, 40, .08); --shadow-hover: 0 10px 26px rgba(16, 24, 40, .16); }
+
+.topbar { background: linear-gradient(120deg, #1f5a3d 0%, #2f6f4f 55%, #3b8660 100%); box-shadow: 0 2px 12px rgba(0,0,0,.18); position: sticky; top: 0; z-index: 50; }
+.brand { font-size: 21px; font-weight: 800; letter-spacing: .6px; }
+.brand::after { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-left: 8px; vertical-align: middle; }
+
+.filtros { background: #fff; }
+.lista-rubros li { border-radius: 9px; transition: background .15s, color .15s; }
+.lista-rubros li:hover { background: #eaf4ee; }
+
+.toolbar { gap: 12px; }
+.toolbar input { border-radius: 999px; padding: 12px 18px; box-shadow: var(--shadow); border-color: transparent; background: #fff; }
+.toolbar input:focus { outline: 2px solid var(--primary); }
+.btn-carrito { border-radius: 999px; padding: 11px 20px; background: var(--primary); color: #fff; border: none; font-weight: 700; box-shadow: var(--shadow); }
+.btn-carrito:hover { background: var(--primary-dark); }
+.btn-carrito #carritoCount { background: var(--accent); color: #1f2937; }
+
+/* ---- Ofertas: carrusel ---- */
+.ofertas { margin: 4px 0 26px; padding: 18px 18px 20px; border-radius: 18px; background: linear-gradient(135deg, #eaf4ee 0%, #ffffff 60%); border: 1px solid #d7e8dd; box-shadow: var(--shadow); }
+.ofertas-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
+.ofertas-titulo { margin: 0; font-size: 26px; font-weight: 800; color: #14532d; letter-spacing: .3px; display: flex; align-items: center; }
+.ofertas-titulo::before { content: ""; width: 6px; height: 26px; border-radius: 3px; background: var(--accent); margin-right: 10px; }
+.ofertas-sub { margin: 4px 0 0 16px; font-size: 13.5px; color: var(--muted); }
+.ofertas-flechas { display: flex; gap: 8px; }
+.oferta-flecha { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #cfd8d2; background: #fff; font-size: 24px; line-height: 1; cursor: pointer; color: var(--primary); box-shadow: var(--shadow); }
+.oferta-flecha:hover { background: var(--primary); color: #fff; }
+.ofertas-grid { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 10px; scrollbar-width: thin; }
+.oferta-card { flex: 0 0 230px; scroll-snap-align: start; border-radius: 14px; box-shadow: var(--shadow); transition: transform .2s, box-shadow .2s; }
+.oferta-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+.oferta-card:hover img { transform: none; }
+
+/* ---- Productos: tarjetas ---- */
+.lista-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 18px; }
+.producto-fila { display: flex; flex-direction: column; align-items: stretch; padding: 0; overflow: hidden; border-radius: 16px; border: 1px solid #edf0f2; box-shadow: var(--shadow); transition: transform .18s, box-shadow .18s; grid-template-areas: none; }
+.producto-fila:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); border-color: #dfe5e9; }
+.producto-img { width: 100% !important; height: 175px !important; object-fit: contain; background: #fff; border: 0; border-bottom: 1px solid #f0f2f4; border-radius: 0; padding: 10px; box-sizing: border-box; }
+.producto-img-vacia { background: linear-gradient(135deg, #f3f5f7, #e9edf0); }
+.producto-info { padding: 12px 14px 0; flex: 0 0 auto; }
+.producto-nombre { font-size: 14.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+.producto-precio-row { width: auto !important; justify-content: flex-start !important; padding: 8px 14px 0; margin: 0 !important; }
+.precio-actual { font-size: 21px; font-weight: 800; color: var(--primary); }
+.precio-tachado { font-size: 13px; }
+.producto-footer { flex-wrap: wrap !important; padding: 10px 14px 14px; margin: auto 0 0 !important; gap: 8px; justify-content: flex-start !important; }
+.producto-footer .stock-badge { flex: 1 0 100%; }
+.producto-footer .qty-control { flex: 0 0 auto; }
+.producto-footer .btn-agregar { flex: 1 1 auto; border-radius: 9px; padding: 9px 12px; font-weight: 700; }
+.producto-fila.sin-stock { background: #fff; }
+
+@media (max-width: 960px) {
+  .lista-productos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .ofertas { padding: 14px 12px 16px; border-radius: 14px; }
+  .ofertas-titulo { font-size: 21px; }
+  .oferta-card { flex-basis: 62%; }
+  .ofertas-flechas { display: none; }
+}
+@media (min-width: 640px) and (max-width: 960px) { .lista-productos { grid-template-columns: repeat(3, minmax(0, 1fr)); } .oferta-card { flex-basis: 34%; } }
+@media (max-width: 560px) {
+  .producto-img { height: 130px !important; }
+  .precio-actual { font-size: 18px; }
+  .producto-nombre { font-size: 13.5px; }
+  .producto-footer .btn-agregar { flex: 1 0 100%; }
+}
+
+.producto-precio-row { justify-content: flex-start; }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>El Fogon - Pedidos</title>
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 
@@ -49,7 +49,16 @@
           </button>
         </div>
         <section id="ofertas" class="ofertas hidden">
-          <h2 class="ofertas-titulo">Ofertas</h2>
+          <div class="ofertas-head">
+            <div>
+              <h2 class="ofertas-titulo">Ofertas</h2>
+              <p class="ofertas-sub">Aprovech&aacute; estas promociones por tiempo limitado</p>
+            </div>
+            <div class="ofertas-flechas">
+              <button type="button" id="ofertaPrev" class="oferta-flecha" aria-label="Anterior">&#8249;</button>
+              <button type="button" id="ofertaNext" class="oferta-flecha" aria-label="Siguiente">&#8250;</button>
+            </div>
+          </div>
           <div id="ofertasGrid" class="ofertas-grid"></div>
         </section>
         <div id="listaProductos" class="lista-productos"></div>
@@ -145,6 +154,6 @@
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="app.js?v=12"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>

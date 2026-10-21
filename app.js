@@ -175,10 +175,19 @@ async function cargarOfertas() {
       grid.appendChild(b);
     });
     sec.classList.toggle('hidden', lista.length === 0);
+    // flechas del carrusel: solo si hay mas afiches de los que entran
+    const flechas = sec.querySelector('.ofertas-flechas');
+    flechas.classList.toggle('hidden', grid.scrollWidth <= grid.clientWidth + 4);
   } catch (e) {
     sec.classList.add('hidden');
   }
 }
+function moverOfertas(dir) {
+  const g = $('#ofertasGrid');
+  g.scrollBy({ left: dir * (g.clientWidth * 0.8), behavior: 'smooth' });
+}
+$('#ofertaPrev').addEventListener('click', () => moverOfertas(-1));
+$('#ofertaNext').addEventListener('click', () => moverOfertas(1));
 $('#btnCerrarModalOferta').addEventListener('click', () => $('#modalOferta').classList.add('hidden'));
 $('#modalOferta').addEventListener('click', (e) => {
   if (e.target.id === 'modalOferta') $('#modalOferta').classList.add('hidden');
