@@ -126,6 +126,24 @@ switch ($accion) {
         ]);
         break;
 
+    // Ofertas: hasta 4 afiches configurados desde el programa (config_portal).
+    case 'ofertas':
+        $ofertas = [];
+        try {
+            $res = $mysqli->query("SELECT clave, valor FROM config_portal WHERE clave LIKE 'oferta\\_%'");
+            $cfg = [];
+            while ($r = $res->fetch_assoc()) $cfg[$r['clave']] = $r['valor'];
+            for ($n = 1; $n <= 4; $n++) {
+                $img = trim($cfg["oferta_{$n}_imagen"] ?? '');
+                if ($img === '' || ($cfg["oferta_{$n}_activo"] ?? '1') === '0') continue;
+                $ofertas[] = ['slot' => $n, 'imagen_url' => $img, 'titulo' => trim($cfg["oferta_{$n}_titulo"] ?? '')];
+            }
+        } catch (Throwable $e) {
+            $ofertas = [];
+        }
+        json_out(['ofertas' => $ofertas]);
+        break;
+
     // Entrada como invitado (sin codigo): ve precios de lista y solo puede
     // solicitar cotizaciones.
     case 'login_invitado':

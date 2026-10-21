@@ -373,6 +373,41 @@ switch ($accion) {
         json_out(['config' => $out]);
         break;
 
+    case 'ofertas_get':
+        $cfg = [];
+        $res = $mysqli->query("SELECT clave, valor FROM config_portal WHERE clave LIKE 'oferta\\_%'");
+        while ($r = $res->fetch_assoc()) $cfg[$r['clave']] = $r['valor'];
+        $out = [];
+        for ($n = 1; $n <= 4; $n++) {
+            $out[] = [
+                'slot' => $n,
+                'imagen_url' => $cfg["oferta_{$n}_imagen"] ?? '',
+                'titulo' => $cfg["oferta_{$n}_titulo"] ?? '',
+                'activo' => ($cfg["oferta_{$n}_activo"] ?? '1') !== '0',
+            ];
+        }
+        json_out(['ofertas' => $out]);
+        break;
+
+    case 'ofertas_set':
+        $b = body_json();
+        $stmt = $mysqli->prepare("INSERT INTO config_portal (clave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor=VALUES(valor)");
+        foreach (($b['ofertas'] ?? []) as $o) {
+            $n = (int)($o['slot'] ?? 0);
+            if ($n < 1 || $n > 4) continue;
+            $vals = [
+                "oferta_{$n}_imagen" => substr(trim((string)($o['imagen_url'] ?? '')), 0, 250),
+                "oferta_{$n}_titulo" => substr(trim((string)($o['titulo'] ?? '')), 0, 120),
+                "oferta_{$n}_activo" => !empty($o['activo']) ? '1' : '0',
+            ];
+            foreach ($vals as $k => $v) {
+                $stmt->bind_param('ss', $k, $v);
+                $stmt->execute();
+            }
+        }
+        json_out(['ok' => true]);
+        break;
+
     case 'config_set':
         $b = body_json();
         $stmt = $mysqli->prepare("INSERT INTO config_portal (clave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor=VALUES(valor)");

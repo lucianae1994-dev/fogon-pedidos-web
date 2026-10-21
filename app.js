@@ -129,6 +129,7 @@ async function entrarCatalogo() {
   const data = await llamar('catalogo', credenciales());
   productos = data.productos;
   aplicarModoInvitado();
+  cargarOfertas();
   rubroActivo = 'Todos';
   $('#clienteNombre').textContent = clienteActual.nombre;
   $('#clienteInfo').classList.remove('hidden');
@@ -152,6 +153,36 @@ async function entrarCatalogo() {
   }
   mostrarVista('#vistaLogin');
 })();
+
+// ---------------------------------------------------------------- ofertas (afiches)
+async function cargarOfertas() {
+  const sec = $('#ofertas');
+  try {
+    const data = await llamar('ofertas', {});
+    const lista = data.ofertas || [];
+    const grid = $('#ofertasGrid');
+    grid.innerHTML = '';
+    lista.forEach((o) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'oferta-card';
+      b.innerHTML = `<img src="${escapeHtml(o.imagen_url)}" alt="${escapeHtml(o.titulo || 'Oferta')}" loading="lazy">`;
+      b.addEventListener('click', () => {
+        $('#modalOfertaImg').src = o.imagen_url;
+        $('#modalOfertaImg').alt = o.titulo || 'Oferta';
+        $('#modalOferta').classList.remove('hidden');
+      });
+      grid.appendChild(b);
+    });
+    sec.classList.toggle('hidden', lista.length === 0);
+  } catch (e) {
+    sec.classList.add('hidden');
+  }
+}
+$('#btnCerrarModalOferta').addEventListener('click', () => $('#modalOferta').classList.add('hidden'));
+$('#modalOferta').addEventListener('click', (e) => {
+  if (e.target.id === 'modalOferta') $('#modalOferta').classList.add('hidden');
+});
 
 // ---------------------------------------------------------------- rubros
 function renderRubros() {
@@ -417,7 +448,6 @@ function mostrarConfirmacion(pedido) {
   const cot = pedido.tipo === 'cotizacion';
   $('#confTitulo').textContent = cot ? 'Cotizaci\u00f3n enviada' : 'Pedido enviado';
   $('#confMensajeCot').classList.toggle('hidden', !cot);
-  $('.conf-qr').classList.toggle('hidden', cot);
   $('#confPedidoId').textContent = `${cot ? 'Cotizaci\u00f3n' : 'Pedido'} #${pedido.id}`;
   const fecha = new Date(pedido.creado_en.replace(' ', 'T'));
   $('#confFecha').textContent = fecha.toLocaleString('es-AR', {
