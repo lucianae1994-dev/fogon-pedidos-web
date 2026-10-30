@@ -10,6 +10,38 @@ require_admin();
 $accion = $_GET['accion'] ?? '';
 $mysqli = db();
 
+/** Re-vincula fotos que estan en /fotos pero se perdieron del producto
+ * (busca fotos/<sku-en-minusculas-con-guiones>.<ext> para cada producto sin
+ * imagen). Devuelve [recuperadas, sin_foto, archivos]. */
+function recuperar_imagenes(mysqli $mysqli): array {
+    $archivos = [];
+    foreach (glob(__DIR__ . '/fotos/*') ?: [] as $f) {
+        if (!is_file($f)) continue;
+        $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) continue;
+        $archivos[strtolower(pathinfo($f, PATHINFO_FILENAME))] = basename($f);
+    }
+    $base = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'catalogofogon.com') . '/fotos/';
+    $res = $mysqli->query("SELECT id, sku FROM productos WHERE imagen_url IS NULL OR imagen_url = ''");
+    $upd = $mysqli->prepare("UPDATE productos SET imagen_url=? WHERE id=?");
+    $recuperadas = 0;
+    $sinFoto = 0;
+    while ($p = $res->fetch_assoc()) {
+        $slug = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($p['sku'])), '-');
+        if ($slug === '') $slug = 'producto';
+        if (isset($archivos[$slug])) {
+            $url = $base . rawurlencode($archivos[$slug]) . '?v=' . time();
+            $id = (int)$p['id'];
+            $upd->bind_param('si', $url, $id);
+            $upd->execute();
+            $recuperadas++;
+        } else {
+            $sinFoto++;
+        }
+    }
+    return [$recuperadas, $sinFoto, count($archivos)];
+}
+
 switch ($accion) {
 
     // ------------------------------------------------------------------
@@ -35,7 +67,6 @@ switch ($accion) {
                  ON DUPLICATE KEY UPDATE
                     nombre=VALUES(nombre), descripcion=VALUES(descripcion),
                     rubro=VALUES(rubro), subrubro=VALUES(subrubro), laboratorio=VALUES(laboratorio),
-                    imagen_url=VALUES(imagen_url),
                     precio_mostrador=VALUES(precio_mostrador), precio_mostrador_descuento=VALUES(precio_mostrador_descuento),
                     precio_comercio=VALUES(precio_comercio), precio_comercio_descuento=VALUES(precio_comercio_descuento),
                     precio_ganaderos=VALUES(precio_ganaderos), precio_ganaderos_descuento=VALUES(precio_ganaderos_descuento),
@@ -118,6 +149,9 @@ switch ($accion) {
             json_error('Error al sincronizar: ' . $e->getMessage(), 500);
         }
 
+        // Cada sincronizacion/importacion vuelve a vincular las fotos que falten.
+        try { recuperar_imagenes($mysqli); } catch (Throwable $e) { /* no es critico */ }
+
         json_out(['ok' => true, 'total' => count($skusVistos)]);
         break;
 
@@ -147,7 +181,18 @@ switch ($accion) {
         $rubro = (string)($b['rubro'] ?? '');
         $subrubro = (string)($b['subrubro'] ?? '');
         $laboratorio = (string)($b['laboratorio'] ?? '');
-        $imagenUrl = (string)($b['imagen_url'] ?? '');
+        $imagenUrl = trim((string)($b['imagen_url'] ?? ''));
+        // Las importaciones y sincronizaciones NO tocan las fotos: la imagen
+        // solo cambia cuando el editor de producto del programa lo pide
+        // (actualizar_imagen=true; ahi tambien entra "Quitar imagen").
+        if (empty($b['actualizar_imagen'])) {
+            $qi = $mysqli->prepare("SELECT imagen_url FROM productos WHERE sku=?");
+            $skuBuscar = ($skuOriginal !== '') ? $skuOriginal : $sku;
+            $qi->bind_param('s', $skuBuscar);
+            $qi->execute();
+            $ri = $qi->get_result()->fetch_assoc();
+            if ($ri) $imagenUrl = (string)$ri['imagen_url'];
+        }
         $pm = (float)($b['precio_mostrador'] ?? 0);
         $pmd = (isset($b['precio_mostrador_descuento']) && $b['precio_mostrador_descuento'] !== null && $b['precio_mostrador_descuento'] !== '')
             ? (float)$b['precio_mostrador_descuento'] : null;
@@ -364,6 +409,14 @@ switch ($accion) {
 
     // ------------------------------------------------------------------
     // Valores por defecto de limites (0 = sin limite).
+    // Re-vincula fotos que quedaron en la carpeta /fotos pero se perdieron del
+    // producto: busca fotos/<sku-en-minusculas-con-guiones>.<ext> para cada
+    // producto sin imagen y se la vuelve a asignar.
+    case 'imagenes_recuperar':
+        [$recuperadas, $sinFoto, $nArchivos] = recuperar_imagenes($mysqli);
+        json_out(['ok' => true, 'recuperadas' => $recuperadas, 'sin_foto' => $sinFoto, 'archivos' => $nArchivos]);
+        break;
+
     case 'config_get':
         $out = ['max_unidades_default' => 10, 'max_pedidos_dia_default' => 5, 'max_cotizaciones_dia_invitado' => 3];
         $res = $mysqli->query("SELECT clave, valor FROM config_portal");
