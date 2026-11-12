@@ -396,7 +396,7 @@ switch ($accion) {
         $b = body_json();
         $id = (int)($b['id'] ?? 0);
         $estado = (string)($b['estado'] ?? '');
-        if (!in_array($estado, ['nuevo', 'visto', 'preparando', 'completado', 'cancelado'], true)) {
+        if (!in_array($estado, ['nuevo', 'visto', 'confirmado', 'pendiente_pago', 'preparando', 'listo', 'enviado', 'entregado', 'completado', 'cancelado'], true)) {
             json_error('Estado invalido.');
         }
         $stmt = $mysqli->prepare(

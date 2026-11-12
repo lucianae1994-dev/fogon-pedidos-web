@@ -32,3 +32,9 @@ WHERE NOT EXISTS (SELECT 1 FROM clientes WHERE es_invitado = 1);
 ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_venta_plus DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER precio_ganaderos_descuento;
 ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_venta_plus_descuento DECIMAL(12,2) NULL AFTER precio_venta_plus;
 ALTER TABLE clientes MODIFY nivel_precio ENUM('mostrador','comercio','ganaderos','venta_plus','sin_precio') NOT NULL DEFAULT 'mostrador';
+
+-- Estados de pedido ampliados
+ALTER TABLE pedidos MODIFY estado ENUM('nuevo','visto','confirmado','pendiente_pago','preparando','listo','enviado','entregado','completado','cancelado') NOT NULL DEFAULT 'nuevo';
+
+-- Margen de reventa que cada cliente define en el catalogo
+ALTER TABLE clientes ADD COLUMN IF NOT EXISTS margen_reventa DECIMAL(6,2) NOT NULL DEFAULT 0;

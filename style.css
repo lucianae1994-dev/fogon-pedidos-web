@@ -265,7 +265,11 @@ body {
 .estado-badge.estado-nuevo { background: #fdf1de; color: #9a6b13; }
 .estado-badge.estado-visto { background: #eaf1fb; color: #2a5fa8; }
 .estado-badge.estado-preparando { background: #eaf1fb; color: #2a5fa8; }
-.estado-badge.estado-completado { background: #e5f3ea; color: #1f7a45; }
+.estado-badge.estado-confirmado { background: #eaf1fb; color: #2a5fa8; }
+.estado-badge.estado-pendiente_pago { background: #fdf1de; color: #9a6b13; }
+.estado-badge.estado-listo { background: #efe9fb; color: #5b3aa8; }
+.estado-badge.estado-enviado { background: #e3f3f6; color: #17687a; }
+.estado-badge.estado-entregado, .estado-badge.estado-completado { background: #e5f3ea; color: #1f7a45; }
 .estado-badge.estado-cancelado { background: #fbe6e4; color: #b3261e; }
 
 /* ---------------- responsive (tablet y celular) ---------------- */
@@ -445,3 +449,30 @@ body { overflow-x: hidden; }
 }
 
 .producto-precio-row { justify-content: flex-start; }
+
+/* ---- Ofertas repartidas: arriba (1-2), lateral (3), final (4) ---- */
+.ofertas-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 4px 0 24px; }
+.ofertas-top.uno { grid-template-columns: minmax(0, 360px); }
+.ofertas-top .oferta-card, .oferta-lateral .oferta-card, .oferta-final .oferta-card {
+  position: relative; display: block; width: 100%; flex: none; aspect-ratio: auto; padding: 0; border: 0; background: #fff;
+  border-radius: 14px; overflow: hidden; cursor: pointer; box-shadow: var(--shadow); transition: transform .2s, box-shadow .2s;
+}
+.ofertas-top .oferta-card img { width: 100%; height: auto; max-height: 420px; object-fit: contain; display: block; background: #f3f6f4; }
+.oferta-lateral { margin-top: 22px; }
+.oferta-lateral .oferta-card img, .oferta-final .oferta-card img { width: 100%; height: auto; display: block; }
+.oferta-final { margin: 28px auto 8px; max-width: 420px; }
+.oferta-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+.oferta-tag { position: absolute; top: 10px; left: 10px; z-index: 1; background: #e11d2e; color: #fff; font-size: 11.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+@media (max-width: 960px) {
+  .oferta-lateral { max-width: 260px; margin: 14px auto 4px; }
+}
+@media (max-width: 640px) {
+  .ofertas-top { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
+
+/* ---- Margen de reventa ---- */
+.margen-box { display: flex; align-items: center; gap: 6px; background: #fff; border-radius: 999px; padding: 4px 12px; box-shadow: var(--shadow); font-size: 13px; font-weight: 600; color: var(--primary); white-space: nowrap; }
+.margen-box input { width: 62px; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font-size: 14px; text-align: right; box-shadow: none; }
+.precio-reventa { font-size: 12.5px; color: #14532d; background: #eaf4ee; border-radius: 8px; padding: 4px 8px; margin: 4px 0 0; }
+.precio-reventa small { color: var(--muted); }
+@media (max-width: 640px) { .margen-box { padding: 3px 8px; font-size: 12px; } .margen-box input { width: 50px; } }

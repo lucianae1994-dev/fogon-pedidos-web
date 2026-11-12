@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS productos (
     precio_ganaderos_descuento DECIMAL(12,2) NULL,
 
     stock_status ENUM('instock','outofstock') NOT NULL DEFAULT 'instock',
+    stock_actual INT NULL,
+    stock_minimo INT NULL,
+    stock_maximo INT NULL,
     activo TINYINT(1) NOT NULL DEFAULT 1,
 
     actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -44,7 +47,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     codigo_acceso VARCHAR(32) NOT NULL,
-    nivel_precio ENUM('mostrador','comercio','ganaderos') NOT NULL DEFAULT 'mostrador',
+    nivel_precio ENUM('mostrador','comercio','ganaderos','sin_precio') NOT NULL DEFAULT 'mostrador',
     email VARCHAR(255) NULL,
     telefono VARCHAR(50) NULL,
     notas TEXT NULL,
@@ -61,7 +64,7 @@ CREATE TABLE IF NOT EXISTS clientes (
 CREATE TABLE IF NOT EXISTS pedidos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cliente_id INT NOT NULL,
-    estado ENUM('nuevo','visto','preparando','completado','cancelado') NOT NULL DEFAULT 'nuevo',
+    estado ENUM('nuevo','visto','confirmado','pendiente_pago','preparando','listo','enviado','entregado','completado','cancelado') NOT NULL DEFAULT 'nuevo',
     notas TEXT NULL,
     total DECIMAL(12,2) NOT NULL DEFAULT 0,
     creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -86,6 +89,9 @@ CREATE TABLE IF NOT EXISTS pedido_items (
     cantidad INT NOT NULL DEFAULT 1,
     precio_unitario DECIMAL(12,2) NOT NULL DEFAULT 0,
     subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,
+    -- 1 si se pidio estando sin stock confirmado (el cliente lo pidio igual,
+    -- a verificar disponibilidad antes de prepararlo).
+    sin_stock_confirmar TINYINT(1) NOT NULL DEFAULT 0,
 
     KEY idx_items_pedido (pedido_id),
     CONSTRAINT fk_items_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,

@@ -122,8 +122,24 @@ switch ($accion) {
                 'nombre' => $cliente['nombre'],
                 'nivel_precio' => $cliente['nivel_precio'],
                 'ver_precio' => ver_precio($cliente['nivel_precio']),
+                'margen_reventa' => (float)($cliente['margen_reventa'] ?? 0),
             ],
         ]);
+        break;
+
+    // Margen de reventa: cada cliente define su % para calcular su precio de venta.
+    // Body: { "codigo": "...", "margen": 25.5 }
+    case 'margen_guardar':
+        $b = body_json();
+        $cliente = cliente_por_codigo($mysqli, (string)($b['codigo'] ?? ''));
+        if (!$cliente) json_error('Codigo de acceso invalido.', 401);
+        $m = round((float)($b['margen'] ?? 0), 2);
+        if ($m < 0 || $m > 1000) json_error('Margen invalido.');
+        $stmt = $mysqli->prepare("UPDATE clientes SET margen_reventa=? WHERE id=?");
+        $id = (int)$cliente['id'];
+        $stmt->bind_param('di', $m, $id);
+        $stmt->execute();
+        json_out(['ok' => true, 'margen' => $m]);
         break;
 
     // Ofertas: hasta 4 afiches configurados desde el programa (config_portal).
@@ -209,7 +225,7 @@ switch ($accion) {
                 'precio_descuento' => $verPrecio ? $precios['precio_descuento'] : null,
             ];
         }
-        json_out(['productos' => $productos, 'nivel_precio' => $cliente['nivel_precio'], 'ver_precio' => $verPrecio, 'invitado' => (bool)$cliente['es_invitado']]);
+        json_out(['productos' => $productos, 'nivel_precio' => $cliente['nivel_precio'], 'ver_precio' => $verPrecio, 'invitado' => (bool)$cliente['es_invitado'], 'margen_reventa' => (float)($cliente['margen_reventa'] ?? 0)]);
         break;
 
     // ------------------------------------------------------------------

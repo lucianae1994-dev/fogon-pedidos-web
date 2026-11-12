@@ -110,7 +110,33 @@ function aplicarModoInvitado() {
   $('#btnConfirmarPedido').textContent = inv ? 'Solicitar cotizaci\u00f3n' : 'Confirmar pedido';
   $('#btnCarritoTexto').textContent = inv ? 'Cotizaci\u00f3n' : 'Carrito';
   $('#avisoInvitado').classList.toggle('hidden', !inv);
+  const puedeRevender = !inv && verPrecio();
+  $('#margenBox').classList.toggle('hidden', !puedeRevender);
+  $('#inputMargen').value = puedeRevender && clienteActual.margen_reventa ? clienteActual.margen_reventa : '';
 }
+
+// ---- Margen de reventa: el cliente ve su precio de venta sugerido (se guarda para que Fogon lo vea) ----
+function margenActual() {
+  const m = parseFloat($('#inputMargen').value);
+  return !isNaN(m) && m > 0 ? m : 0;
+}
+function precioReventaHtml(p) {
+  const m = margenActual();
+  if (!m || !verPrecio() || esInvitado()) return '';
+  const base = p.precio_descuento || p.precio || 0;
+  return `<div class="precio-reventa">Tu precio de reventa: <strong>${money(Math.round(base * (1 + m / 100) * 100) / 100)}</strong> <small>(+${m}%)</small></div>`;
+}
+let margenTimer = null;
+$('#inputMargen').addEventListener('input', () => {
+  renderProductos();
+  clearTimeout(margenTimer);
+  margenTimer = setTimeout(async () => {
+    try {
+      const r = await llamar('margen_guardar', { codigo: codigoActual, margen: margenActual() });
+      if (clienteActual) clienteActual.margen_reventa = r.margen;
+    } catch (e) { /* no es critico */ }
+  }, 700);
+});
 
 $('#btnSalir').addEventListener('click', () => {
   localStorage.removeItem('fogon_codigo');
@@ -156,38 +182,38 @@ async function entrarCatalogo() {
 
 // ---------------------------------------------------------------- ofertas (afiches)
 async function cargarOfertas() {
-  const sec = $('#ofertas');
+  const zonas = ['#ofertasTop', '#ofertaLateral', '#ofertaFinal'].map((q) => $(q));
+  zonas.forEach((z) => { z.innerHTML = ''; z.classList.add('hidden'); });
   try {
     const data = await llamar('ofertas', {});
     const lista = data.ofertas || [];
-    const grid = $('#ofertasGrid');
-    grid.innerHTML = '';
-    lista.forEach((o) => {
+    const card = (o, etiqueta) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'oferta-card';
-      b.innerHTML = `<img src="${escapeHtml(o.imagen_url)}" alt="${escapeHtml(o.titulo || 'Oferta')}" loading="lazy">`;
+      b.innerHTML = (etiqueta ? `<span class="oferta-tag">${etiqueta}</span>` : '') +
+        `<img src="${escapeHtml(o.imagen_url)}" alt="${escapeHtml(o.titulo || 'Oferta')}" loading="lazy">`;
       b.addEventListener('click', () => {
         $('#modalOfertaImg').src = o.imagen_url;
         $('#modalOfertaImg').alt = o.titulo || 'Oferta';
         $('#modalOferta').classList.remove('hidden');
       });
-      grid.appendChild(b);
-    });
-    sec.classList.toggle('hidden', lista.length === 0);
-    // flechas del carrusel: solo si hay mas afiches de los que entran
-    const flechas = sec.querySelector('.ofertas-flechas');
-    flechas.classList.toggle('hidden', grid.scrollWidth <= grid.clientWidth + 4);
+      return b;
+    };
+    // Reparto: 1 y 2 arriba del catalogo, 3 en el lateral, 4 al final de la lista.
+    const [top, lateral, final] = [lista.slice(0, 2), lista[2], lista[3]];
+    if (top.length) {
+      const t = $('#ofertasTop');
+      t.classList.toggle('uno', top.length === 1);
+      top.forEach((o) => t.appendChild(card(o, 'Oferta')));
+      t.classList.remove('hidden');
+    }
+    if (lateral) { $('#ofertaLateral').appendChild(card(lateral, 'Oferta')); $('#ofertaLateral').classList.remove('hidden'); }
+    if (final) { $('#ofertaFinal').appendChild(card(final, 'No te la pierdas')); $('#ofertaFinal').classList.remove('hidden'); }
   } catch (e) {
-    sec.classList.add('hidden');
+    zonas.forEach((z) => z.classList.add('hidden'));
   }
 }
-function moverOfertas(dir) {
-  const g = $('#ofertasGrid');
-  g.scrollBy({ left: dir * (g.clientWidth * 0.8), behavior: 'smooth' });
-}
-$('#ofertaPrev').addEventListener('click', () => moverOfertas(-1));
-$('#ofertaNext').addEventListener('click', () => moverOfertas(1));
 $('#btnCerrarModalOferta').addEventListener('click', () => $('#modalOferta').classList.add('hidden'));
 $('#modalOferta').addEventListener('click', (e) => {
   if (e.target.id === 'modalOferta') $('#modalOferta').classList.add('hidden');
@@ -253,7 +279,7 @@ function renderProductos() {
         ${sinStock ? '<div class="sin-stock-aviso">Se pide sujeto a confirmacion de stock</div>' : ''}
         ${maxCant(p) !== Infinity ? `<div class="max-aviso">M\u00e1x. ${maxCant(p)} por pedido</div>` : ''}
       </div>
-      ${verPrecio() ? `<div class="producto-precio-row">${precioHtml}</div>` : ''}
+      ${verPrecio() ? `<div class="producto-precio-row">${precioHtml}</div>${precioReventaHtml(p)}` : ''}
       <div class="producto-footer">
         <span class="stock-badge ${badge.clase}">${badge.texto}</span>
         <div class="qty-control">
@@ -323,6 +349,7 @@ function abrirDetalleProducto(p, sinStock, badge) {
     precioRow.innerHTML = p.precio_descuento
       ? `<span class="precio-tachado">${money(p.precio_regular)}</span><span class="precio-actual">${money(p.precio_descuento)}</span>`
       : `<span class="precio-actual">${money(p.precio)}</span>`;
+    precioRow.innerHTML += precioReventaHtml(p);
   } else {
     precioRow.classList.add('hidden');
     precioRow.innerHTML = '';
@@ -488,7 +515,12 @@ $('#btnDescargarPdfConf').addEventListener('click', () => {
 const ESTADO_LABELS = {
   nuevo: 'Nuevo',
   visto: 'Visto',
+  confirmado: 'Confirmado',
+  pendiente_pago: 'Pendiente de pago',
   preparando: 'Preparando',
+  listo: 'Listo para retirar/enviar',
+  enviado: 'Enviado',
+  entregado: 'Entregado',
   completado: 'Completado',
   cancelado: 'Cancelado',
 };
