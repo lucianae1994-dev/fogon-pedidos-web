@@ -580,7 +580,7 @@ function renderMisPedidos(pedidos) {
       <div class="pedido-items">${itemsHtml}</div>
       ${notasHtml}
       <div class="pedido-card-footer">
-        <button type="button" class="btn-link" data-accion="pdf-pedido" data-id="${p.id}">Descargar PDF</button>
+        <button type="button" class="btn-pdf" data-accion="pdf-pedido" data-id="${p.id}">&#128196; Exportar PDF</button>
         ${verPrecio() ? `<div class="pedido-card-total">Total: <strong>${money(p.total)}</strong></div>` : ''}
       </div>
     `;

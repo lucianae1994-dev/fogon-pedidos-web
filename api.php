@@ -194,7 +194,10 @@ switch ($accion) {
                     precio_ganaderos, precio_ganaderos_descuento,
                     precio_venta_plus, precio_venta_plus_descuento,
                     stock_status, stock_actual, stock_minimo, stock_maximo
-             FROM productos WHERE activo=1 ORDER BY rubro, nombre"
+             FROM productos WHERE activo=1
+               AND stock_status <> 'outofstock'
+               AND (stock_actual IS NULL OR stock_actual > 0)
+             ORDER BY rubro, nombre"
         );
 
         $verPrecio = ver_precio($cliente['nivel_precio']);
