@@ -480,3 +480,16 @@ body { overflow-x: hidden; }
 /* ---- Boton exportar PDF por pedido ---- */
 .btn-pdf { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 999px; border: 1.5px solid var(--primary); background: #fff; color: var(--primary); font-weight: 700; font-size: 13.5px; cursor: pointer; }
 .btn-pdf:hover { background: var(--primary); color: #fff; }
+
+/* ---- Branding El Fogon ---- */
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand::after { display: none; }
+.brand-logo { width: 46px; height: 46px; border-radius: 50%; background: #fff; padding: 2px; object-fit: contain; box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,.25); }
+.brand-texto { display: flex; flex-direction: column; line-height: 1.1; font-size: 21px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; }
+.brand-texto small { font-size: 10.5px; font-weight: 600; letter-spacing: 2px; color: var(--accent); margin-top: 3px; }
+.topbar { border-bottom: 3px solid var(--accent); }
+.login-logo { width: 110px; height: 110px; border-radius: 50%; background: #fff; padding: 3px; box-shadow: 0 0 0 3px var(--accent), 0 6px 18px rgba(0,0,0,.2); filter: none; }
+.login-tag { margin: -4px 0 10px; font-size: 12px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--primary-dark); }
+.pie { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 22px 16px; margin-top: 30px; background: var(--primary-dark); color: #e8f1ec; font-size: 13px; line-height: 1.5; text-align: left; border-top: 3px solid var(--accent); }
+.pie-logo { width: 44px; height: 44px; border-radius: 50%; background: #fff; padding: 2px; }
+@media (max-width: 640px) { .brand-logo { width: 38px; height: 38px; } .brand-texto { font-size: 16px; } .brand-texto small { font-size: 9px; letter-spacing: 1.4px; } }

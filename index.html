@@ -3,13 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>El Fogon - Pedidos</title>
-<link rel="stylesheet" href="style.css?v=18">
+<title>El Fog&oacute;n - Proveedor Veterinario</title>
+<link rel="icon" type="image/png" href="fotos/logoagroelfogon150.png">
+<link rel="apple-touch-icon" href="fotos/logoagroelfogon150.png">
+<meta name="theme-color" content="#234f38">
+<link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
 
   <header class="topbar">
-    <div class="brand">El Fog&oacute;n</div>
+    <div class="brand">
+      <img class="brand-logo" src="fotos/logoagroelfogon150.png" alt="El Fog&oacute;n">
+      <span class="brand-texto">El Fog&oacute;n<small>Proveedor Veterinario</small></span>
+    </div>
     <div id="clienteInfo" class="cliente-info hidden">
       <span id="clienteNombre"></span>
       <button id="btnMisPedidos" class="btn-link">Mis pedidos</button>
@@ -22,6 +28,7 @@
     <div class="login-box">
       <img class="login-logo" src="fotos/logoagroelfogon150.png" alt="El Fog&oacute;n">
       <h1>Pedidos El Fog&oacute;n</h1>
+      <p class="login-tag">Proveedor Veterinario</p>
       <p class="muted">Ingres&aacute; tu c&oacute;digo de acceso para ver el cat&aacute;logo y hacer tu pedido.</p>
       <form id="formLogin">
         <input type="text" id="inputCodigo" placeholder="C&oacute;digo de acceso" autocomplete="off" autofocus>
@@ -149,6 +156,11 @@
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <footer class="pie">
+    <img src="fotos/logoagroelfogon150.png" alt="" class="pie-logo">
+    <div><strong>Agroveterinaria El Fog&oacute;n</strong><br>Proveedor Veterinario &middot; catalogofogon.com</div>
+  </footer>
+
   <script src="app.js?v=16"></script>
 </body>
 </html>
